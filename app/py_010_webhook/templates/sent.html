@@ -2,8 +2,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% include 'flash.html' %}
-	
-	{{data.html|safe}}
-	
+    <h1>Webhook Recipe</h1>
+    
+    {% if not data.ok %}
+        <h2>Problem while sending the envelope</h2>
+        <p>{{data.msg}}</p>
+    {% else %}
+        {{data.html | safe }}
+    {% endif %}
 {% endblock %}

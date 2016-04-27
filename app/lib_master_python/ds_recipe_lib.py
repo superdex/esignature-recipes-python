@@ -88,11 +88,14 @@ def login():
     response = r.json()
     # Example response:
     # { "loginAccounts": [ 
-    #       { "name": "DocuSign", "accountId": "1374267", 
+    #       { "name": "DocuSign", 
+    #         "accountId": "1374267", 
     #         "baseUrl": "https:#demo.docusign.net/restapi/v2/accounts/1374267", 
-    #        "isDefault": "true", "userName": "Recipe Login", 
-    #        "userId": "d43a4a6a-dbe7-491e-9bad-8f7b4cb7b1b5", 
-    #        "email": "temp2+recipe@kluger.com", "siteDescription": ""
+    #         "isDefault": "true",
+    #         "userName": "Recipe Login", 
+    #         "userId": "d43a4a6a-dbe7-491e-9bad-8f7b4cb7b1b5", 
+    #         "email": "temp2+recipe@kluger.com", 
+    #         "siteDescription": ""
     #      } 
     # ]}
     #

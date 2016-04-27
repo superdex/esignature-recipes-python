@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Webhook Recipe&mdash;Python</h1>
-    {% include 'flash.html' %}
+    <h1>Webhook Recipe</h1>
 	
-	<p>Sending the envelope. Please stand by...</p>
-	<!-- <script>window.location="sent"</script> -->
+    <p class="margintop"><button id="startbtn" type="button" class="btn btn-primary" data-endpoint="send" data-response="newpage_get">Send Signature Request!</button></p>
+	<div class="margintop" id="target"></div>
+    
+    
+    
 {% endblock %}

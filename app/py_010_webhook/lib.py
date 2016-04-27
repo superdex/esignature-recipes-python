@@ -1,4 +1,4 @@
-# DocuSign API Walkthrough 04 (PYTHON) - Add Signature Request to Document and Send
+# DocuSign API Recipe 010 (PYTHON) - Send with eventNotification
 #
 # Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
@@ -67,8 +67,8 @@ def send():
         "envelopeEvents": [ # for this recipe, we're requesting notifications
             # for all envelope and recipient events
             {"envelopeEventStatusCode": "sent"},
-              {"envelopeEventStatusCode": "delivered"},
-              {"envelopeEventStatusCode": "completed"},
+            {"envelopeEventStatusCode": "delivered"},
+            {"envelopeEventStatusCode": "completed"},
             {"envelopeEventStatusCode": "declined"},
             {"envelopeEventStatusCode": "voided"}],
         "recipientEvents": [
@@ -165,7 +165,7 @@ def send():
 ########################################################################
 ########################################################################
 
-def    setup_output_dir(envelope_id):
+def setup_output_dir(envelope_id):
 # setup output dir for the envelope
     # Store the file. Create directories as needed
     # Some systems might still not like files or directories to start with numbers.
@@ -179,7 +179,7 @@ def    setup_output_dir(envelope_id):
     files_dir = os.path.join(os.getcwd(), xml_file_dir)
     shutil.copy(os.path.join(files_dir, readme), envelope_dir)
 
-def    get_envelope_dir(envelope_id):
+def get_envelope_dir(envelope_id):
     # Some systems might still not like files or directories to start with numbers.
     # So we prefix the envelope ids with E
     
@@ -295,19 +295,3 @@ def nda_fields():
 ########################################################################
 
 # FIN
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,9 +9,9 @@ bp = Blueprint('py_010_webhook', __name__,
 def index():
     return render_template('index.html', title='Home - Webhook--Python')
 
-@bp.route('/sent')
+@bp.route('/send')
 def sent():
-    r = py_010_webhook_lib.send()
+    r = lib.send()
     return render_template('sent.html', title='Sent - Webhook--Python', data=r)
 
 @bp.route('/webhook', methods=['POST'])

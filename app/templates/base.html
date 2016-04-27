@@ -51,11 +51,11 @@
 <!-- Latest compiled and minified JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script><!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script src="{{ url_for('static', filename='assets_master/ie10-viewport-bug-workaround.js') }}"></script>
-<script src="{{ url_for('static', filename='bower_components/mustache.js/mustache.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets_master/mustache.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/g/ace@1.2.2(noconflict/ace.js+noconflict/mode-xml.js+noconflict/theme-chrome.js)"></script>
 
 <!-- JS for the recipes -->
-<script src="{{ url_for('.static', filename='py_010_webhook.js') }}"></script>
+<script src="{{ url_for('static', filename='assets_master/recipes.js') }}"></script>
 </body>
 </html>
 
