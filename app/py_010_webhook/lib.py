@@ -173,6 +173,11 @@ def status_page(envelope_id):
     ds_params = json.dumps(
             {"status_envelope_id": envelope_id, "url": ds_recipe_lib.get_base_url(2)})
     result = {'ok': True, 'msg': None}
+
+    r = ds_recipe_lib.login()
+    if (not r["ok"]):
+        result = {'ok': False, 'msg': "Error logging in"}
+        return {"result": result, "ds_params": ds_params}
     try:
         r = requests.get(url, headers=ds_recipe_lib.ds_headers)
     except requests.exceptions.RequestException as e:
@@ -218,26 +223,29 @@ def status_item(filepath, filename, files_dir_url):
 
     xml = BeautifulSoup(data, "xml")
     envelope_id = xml.EnvelopeStatus.EnvelopeID.string
-    time_generated = xml.EnvelopeStatus.TimeGenerated.string
     
     # iterate through the recipients
     recipients = []
     for recipient in xml.EnvelopeStatus.RecipientStatuses.children:
+        if (recipient.string == "\n"):
+            continue
         recipients.append({
             "type": recipient.Type.string,
             "email": recipient.Email.string,
             "user_name": recipient.UserName.string,
             "routing_order": recipient.RoutingOrder.string,
             "sent_timestamp": recipient.Sent.string,
-            "delivered_timestamp": recipient.Delivered.string,
-            "signed_timestamp": recipient.Signed.string,
+            "delivered_timestamp": get_string(recipient.Delivered),
+            "signed_timestamp": get_string(recipient.Signed),
             "status": recipient.Status.string
         })
         
     documents = [];
     # iterate through the documents if the envelope is Completed
-    if (xml.EnvelopeStatus.Status.string == "Completed"):
+    if (xml.EnvelopeStatus.Status.string == "Completed" and xml.DocumentPDFs):
         for pdf in xml.DocumentPDFs.children:
+            if (pdf.string == "\n"):
+                continue
             doc_filename = get_pdf_filename(pdf.DocumentType.string, pdf.Name.string)
             documents.append({
                 "document_ID": pdf.DocumentID.string,
@@ -252,19 +260,23 @@ def status_item(filepath, filename, files_dir_url):
         "time_generated": xml.EnvelopeStatus.TimeGenerated.string,
         "subject": xml.EnvelopeStatus.Subject.string,
         "sender_user_name": xml.EnvelopeStatus.UserName.string,
-        "sender_email": xml.EnvelopeStatus.Email.string,
+        "sender_email": get_string(xml.EnvelopeStatus.Email),
         "envelope_status": xml.EnvelopeStatus.Status.string,
         "envelope_sent_timestamp": xml.EnvelopeStatus.Sent.string,
         "envelope_created_timestamp": xml.EnvelopeStatus.Created.string,
-        "envelope_delivered_timestamp": xml.EnvelopeStatus.Delivered.string,
-        "envelope_signed_timestamp": xml.EnvelopeStatus.Signed.string,
-        "envelope_completed_timestamp": xml.EnvelopeStatus.Completed.string,
+        "envelope_delivered_timestamp": get_string(xml.EnvelopeStatus.Delivered),
+        "envelope_signed_timestamp": get_string(xml.EnvelopeStatus.Signed),
+        "envelope_completed_timestamp": get_string(xml.EnvelopeStatus.Completed),
         "timezone": xml.TimeZone.string,
         "timezone_offset": xml.TimeZoneOffset.string,
         "recipients": recipients,
         "documents": documents}
     
     return result
+
+
+def get_string(element):
+    return None if element == None else element.string
     
 
 ########################################################################

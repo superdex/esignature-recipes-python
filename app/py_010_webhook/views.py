@@ -16,7 +16,7 @@ def sent():
     
 @bp.route('/webhook', methods=['POST'])
 def webhook():
-    r = py_010_webhook_lib.webhook_listener()
+    r = lib.webhook_listener()
     return render_template('webhook.html')
 
 @bp.route('/status_page/<envelope_id>') # empty status page

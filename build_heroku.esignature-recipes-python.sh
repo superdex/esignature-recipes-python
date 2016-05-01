@@ -63,7 +63,7 @@ fi
 # the script name is something like 010.build_heroku.webhook_php.sh
 # Get the recipe's name:
 RECIPE=`basename $RECIPE .sh`
-RECIPE=`echo $RECIPE | sed -e "s/\.build_heroku//"`
+RECIPE=`echo $RECIPE | sed -e "s/build_heroku\.//"`
 printf 'Creating Heroku Git repo for recipe: %s\n' "${RECIPE}"
 
 RECIPE_REPO="heroku_${RECIPE}"
@@ -129,7 +129,7 @@ fi
 
 # copy over the files
 printf "%%%%%% Copying files to the new Heroku repo ... "
-tar -cf - . | (cd $RECIPE_REPO_ABS; tar -x -)
+tar -cvf - . | (cd $RECIPE_REPO_ABS; tar -xf -)
 
 # Remove git-specific files from directories
 (cd $RECIPE_REPO_ABS; find . | grep .git | xargs rm -rf)
