@@ -3,7 +3,7 @@
 # Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
-import json, socket, certifi, requests, os, base64, re, urllib, shutil
+import json, socket, certifi, requests, os, base64, re, urllib, shutil, json
 # See http://requests.readthedocs.org/ for information on the requests library
 # See https://urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
@@ -26,8 +26,9 @@ ds_signer1_email = "***"
 ds_signer1_name = "***"
 ds_cc1_email = "***"
 ds_cc1_name = "***"
-xml_file_dir = "app/files/"
+xml_file_dir = "app/py_010_webhook/files/"
 readme = "ReadMe.txt"
+doc_prefix = "doc_"
 
 def send():
     global ds_account_id, ds_signer1_email, ds_signer1_name, ds_cc1_email, ds_cc1_name
@@ -131,7 +132,7 @@ def send():
             "<p>CC: " + ds_cc1_name + "</p>" + \
             "<h2>Next steps</h2>" + \
             "<h3>1. View the incoming notifications and documents</h3>" + \
-            "<p><a href='" + ds_recipe_lib.get_base_url() + "/files/" + envelope_id_to_dir(envelope_id) + "'" + \
+            "<p><a href='" + ds_recipe_lib.get_base_url() + "/status_page/" + envelope_id + "'" + \
             "  class='btn btn-primary' role='button' target='_blank' style='margin-right:1.5em;'>" + \
             "View Notification Files</a> (A new tab/window will be used.)</p>" + \
             "<h3>2. Respond to the Signature Request</h3>"
@@ -160,7 +161,111 @@ def send():
         "webhook_url": webhook_url,
         "html": html
     }
+    
+########################################################################
+########################################################################
 
+def status_page(envelope_id):
+    # Get envelope information
+    # Calls GET /accounts/{accountId}/envelopes/{envelopeId}
+    
+    url = ds_recipe_lib.ds_base_url + "/envelopes/" + envelope_id
+    ds_params = json.dumps(
+            {"status_envelope_id": envelope_id, "url": ds_recipe_lib.get_base_url(2)})
+    result = {'ok': True, 'msg': None}
+    try:
+        r = requests.get(url, headers=ds_recipe_lib.ds_headers)
+    except requests.exceptions.RequestException as e:
+        result = {'ok': False, 'msg': "Error calling Envelopes:get: " + str(e)}
+        return {"result": result, "ds_params": ds_params}
+        
+    status = r.status_code
+    if (status != 200): 
+        result = {'ok': False, 'msg': "Error calling DocuSign Envelopes:get, status is: " + str(status)}
+        return {"result": result, "ds_params": ds_params}
+
+    return {"result": result, "envelope": r.json(), "ds_params": ds_params}
+
+########################################################################
+########################################################################
+
+def status_items(envelope_id):
+    # List of info about the envelope's event items received
+    files_dir_url = ds_recipe_lib.get_base_url(2) + "/files/" + envelope_id_to_dir(envelope_id)
+    env_dir = get_envelope_dir(envelope_id)
+    results = []
+    if (not os.path.isdir(env_dir)):
+        return results # early return. 
+        
+    for i in os.listdir(env_dir):
+        if i.endswith(".xml"): 
+            results.append(status_item(os.path.join(env_dir, i), i, files_dir_url))
+        continue
+
+    return results
+
+########################################################################
+########################################################################
+
+def status_item(filepath, filename, files_dir_url):
+    # summary information about the notification
+    
+    f = open(filepath)
+    data = f.read()
+                      
+    # Note, there are many options for parsing XML in Python
+    # For this recipe, we're using Beautiful Soup, http://www.crummy.com/software/BeautifulSoup/
+
+    xml = BeautifulSoup(data, "xml")
+    envelope_id = xml.EnvelopeStatus.EnvelopeID.string
+    time_generated = xml.EnvelopeStatus.TimeGenerated.string
+    
+    # iterate through the recipients
+    recipients = []
+    for recipient in xml.EnvelopeStatus.RecipientStatuses.children:
+        recipients.append({
+            "type": recipient.Type.string,
+            "email": recipient.Email.string,
+            "user_name": recipient.UserName.string,
+            "routing_order": recipient.RoutingOrder.string,
+            "sent_timestamp": recipient.Sent.string,
+            "delivered_timestamp": recipient.Delivered.string,
+            "signed_timestamp": recipient.Signed.string,
+            "status": recipient.Status.string
+        })
+        
+    documents = [];
+    # iterate through the documents if the envelope is Completed
+    if (xml.EnvelopeStatus.Status.string == "Completed"):
+        for pdf in xml.DocumentPDFs.children:
+            doc_filename = get_pdf_filename(pdf.DocumentType.string, pdf.Name.string)
+            documents.append({
+                "document_ID": pdf.DocumentID.string,
+                "document_type": pdf.DocumentType.string,
+                "name": pdf.Name.string,
+                "url": files_dir_url + '/' + doc_filename
+            })
+        
+    result = {
+        "envelope_id": envelope_id,
+        "xml_url": files_dir_url + '/' + filename,
+        "time_generated": xml.EnvelopeStatus.TimeGenerated.string,
+        "subject": xml.EnvelopeStatus.Subject.string,
+        "sender_user_name": xml.EnvelopeStatus.UserName.string,
+        "sender_email": xml.EnvelopeStatus.Email.string,
+        "envelope_status": xml.EnvelopeStatus.Status.string,
+        "envelope_sent_timestamp": xml.EnvelopeStatus.Sent.string,
+        "envelope_created_timestamp": xml.EnvelopeStatus.Created.string,
+        "envelope_delivered_timestamp": xml.EnvelopeStatus.Delivered.string,
+        "envelope_signed_timestamp": xml.EnvelopeStatus.Signed.string,
+        "envelope_completed_timestamp": xml.EnvelopeStatus.Completed.string,
+        "timezone": xml.TimeZone.string,
+        "timezone_offset": xml.TimeZoneOffset.string,
+        "recipients": recipients,
+        "documents": documents}
+    
+    return result
+    
 
 ########################################################################
 ########################################################################
@@ -175,9 +280,6 @@ def setup_output_dir(envelope_id):
     
     envelope_dir = get_envelope_dir(envelope_id)
     os.makedirs(envelope_dir)
-    # and copy in the ReadMe file
-    files_dir = os.path.join(os.getcwd(), xml_file_dir)
-    shutil.copy(os.path.join(files_dir, readme), envelope_dir)
 
 def get_envelope_dir(envelope_id):
     # Some systems might still not like files or directories to start with numbers.
@@ -234,16 +336,23 @@ def webhook_listener():
     if (xml.EnvelopeStatus.Status.string == "Completed"):
         # Loop through the DocumentPDFs element, storing each document.
         for pdf in xml.DocumentPDFs.children:
-            if (pdf.DocumentType.string == "CONTENT"):
-                filename = 'Completed_' + pdf.Name.string
-            elif (pdf.DocumentType.string == "SUMMARY"):
-                filename = pdf.Name.string
-            else:
-                filename = pdf.DocumentType.string + "_" + pdf.Name.string
+            filename = get_pdf_filename(pdf.DocumentType.string, pdf.Name.string)
             full_filename = os.path.join(envelope_dir, filename)
             with open(full_filename, "wb") as pdf_file:
                 pdf_file.write(base64.b64decode(pdf.PDFBytes.string))
 
+########################################################################
+########################################################################
+
+def get_pdf_filename(doc_type, pdf_name):
+    if (doc_type == "CONTENT"):
+        filename = 'Completed_' + pdf_name
+    elif (doc_type == "SUMMARY"):
+        filename = pdf_name
+    else:
+        filename = doc_type + "_" + pdf_name
+    
+    return filename
 
 ########################################################################
 ########################################################################

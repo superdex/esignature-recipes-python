@@ -162,9 +162,7 @@
 			// This function fetches the latest info from the server
 			working_show();
 			$.ajax({
-				url: ds_params.url + "?op=status_items",
-           		type: 'post',
-            	data: JSON.stringify({'envelope_id':envelope_id}),
+				url: ds_params.url + "/status_items/" + envelope_id,
             	contentType: "application/json; charset=utf-8",
 				dataType: "json"
 			})
@@ -180,27 +178,9 @@
 		// The main stem...
 		window_resized();
 		$(window).resize(window_resized);
-		working_show();
-		get_envelope_info(envelope_id);
 		interval_id = setInterval(fetch_latest, 3000);
 	}
-	
-	function get_envelope_info(envelope_id){
-		// Fetch some basic envelope information for the page
-		$.ajax({
-			url: ds_params.url + "?op=status_info",
-       		type: 'post',
-        	data: JSON.stringify({'envelope_id':envelope_id}),
-        	contentType: "application/json; charset=utf-8",
-			dataType: "json"
-		})
-		.done(function(data, textStatus, jqXHR) {
-			$('#env_info').html("<h4>Subject: " + data.emailSubject 
-			+ "</h4><p>Envelope ID: " + data.envelopeId + "</p>");
-			window_resized();
-		})
-	}
-	
+		
 	function process_items(data){
 		// Process the list of items
 		// The data is an array of events. Events are objects

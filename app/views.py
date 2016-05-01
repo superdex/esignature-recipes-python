@@ -1,11 +1,12 @@
 from flask import Flask, render_template, flash, redirect, session, url_for, request, g, jsonify
 from app import app
 import os.path
+from app.lib_master_python import ds_recipe_lib
 
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template('home.html', title='Home - Python Recipes')
+    return render_template('home.html', title='Home - Python Recipes', base_url=ds_recipe_lib.get_base_url(0))
 
 ################################################################################
 ################################################################################

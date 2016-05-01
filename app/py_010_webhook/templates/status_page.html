@@ -1,0 +1,36 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Webhook Recipe: Envelope Status</h1>
+    
+    {% if not data.result.ok %}
+        <h2>Problem contacting DocuSign</h2>
+        <p>{{data.result.msg}}</p>
+    {% else %}
+        <div id="env_info">
+            <h4>Subject: {{data.envelope.emailSubject}}</h4>
+            <p>Envelope ID: {{data.envelope.envelopeId}}</p>
+        </div>
+    {% endif %}
+
+    <div class="row fill">
+    	<div class="wrapper">
+      	  <div id="status_left" class="col-md-3">
+    		  <p id="working">Working</p>
+    		  <ul id="toc" class="list-unstyled"></ul>
+    		  <ul class="margintop"><li>Click on an entry to view it</li><li>Italics indicate a change</li></ul>
+    	  </div>
+      	  <div id="right_column" class="col-md-9">
+    		  <div id="xml_info">
+      		  	<div id="countdown"><h2>Waiting for first results… <span id="counter"></span></h2></div>
+    		  </div>
+    		  <div id="editor"></div>
+    		  <p class="margintop">&nbsp;</p>
+    	  </div>
+    	<div>
+    </div>
+    
+    <script>ds_params = {{data.ds_params|safe}};</script>
+        
+{% endblock %}

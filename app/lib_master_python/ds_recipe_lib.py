@@ -179,11 +179,12 @@ def get_temp_email_access_qrcode(address):
 ########################################################################
 ########################################################################
 
-def get_base_url():
-    # Dynamically get the url one step before this script's url
+def get_base_url(remove=1):
+    # Dynamically get the url <remove> steps before this script's url
     script_url = get_script_url()
     parts = script_url.split("/")
-    del parts[-1]
+    for x in range(0, remove):
+        del parts[-1]
     url = '/'.join(map(str, parts))
     return url
 
