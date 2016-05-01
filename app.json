@@ -1,6 +1,6 @@
 {
-  "name": "010.Webhook Python Recipe",
-  "description": "DocuSign 010.Webhook Python Recipe",
+  "name": "DocuSign Python Recipes",
+  "description": "www.docusign.com/dev-center/recipes",
   "keywords": ["python"],
   "addons": [],
   "env": {
