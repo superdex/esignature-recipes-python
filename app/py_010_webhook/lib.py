@@ -26,7 +26,7 @@ ds_signer1_email = "***"
 ds_signer1_name = "***"
 ds_cc1_email = "***"
 ds_cc1_name = "***"
-xml_file_dir = "app/py_010_webhook/files/"
+xml_file_dir = "app/py_010_webhook/static/files/"
 readme = "ReadMe.txt"
 doc_prefix = "doc_"
 
@@ -196,7 +196,7 @@ def status_page(envelope_id):
 
 def status_items(envelope_id):
     # List of info about the envelope's event items received
-    files_dir_url = ds_recipe_lib.get_base_url(2) + "/files/" + envelope_id_to_dir(envelope_id)
+    files_dir_url = ds_recipe_lib.get_base_url(2) + "/static/files/" + envelope_id_to_dir(envelope_id)
     env_dir = get_envelope_dir(envelope_id)
     results = []
     if (not os.path.isdir(env_dir)):
@@ -234,7 +234,7 @@ def status_item(filepath, filename, files_dir_url):
             "email": recipient.Email.string,
             "user_name": recipient.UserName.string,
             "routing_order": recipient.RoutingOrder.string,
-            "sent_timestamp": recipient.Sent.string,
+            "sent_timestamp": get_string(recipient.Sent),
             "delivered_timestamp": get_string(recipient.Delivered),
             "signed_timestamp": get_string(recipient.Signed),
             "status": recipient.Status.string
@@ -248,7 +248,7 @@ def status_item(filepath, filename, files_dir_url):
                 continue
             doc_filename = get_pdf_filename(pdf.DocumentType.string, pdf.Name.string)
             documents.append({
-                "document_ID": pdf.DocumentID.string,
+                "document_ID": get_string(pdf.DocumentID),
                 "document_type": pdf.DocumentType.string,
                 "name": pdf.Name.string,
                 "url": files_dir_url + '/' + doc_filename

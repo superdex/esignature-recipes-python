@@ -27,7 +27,7 @@ def status_page(envelope_id):
 @bp.route('/status_items/<envelope_id>') # list all status items
 def status_items(envelope_id):
     r = lib.status_items(envelope_id)
-    return jsonify(r)
+    return jsonify(items=r)
 
 
 

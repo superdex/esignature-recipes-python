@@ -167,7 +167,7 @@
 				dataType: "json"
 			})
 			.done(function(data, textStatus, jqXHR) {
-				var stop_fetching = process_items(data);
+				var stop_fetching = process_items(data.items);
 				if (stop_fetching) {
 					clearInterval(interval_id);
 				}

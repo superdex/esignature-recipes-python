@@ -12,6 +12,9 @@
       },
       "DS_INTEGRATION_ID": {
         "description": "Integration key"
-      }
+      },
+      "DEBUG": {
+        "description": "True for Debug mode or False"
+      }      
    }
 }

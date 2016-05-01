@@ -179,16 +179,24 @@ else
 	fi
 fi
 
+heroku config:set DEBUG=True
+
 echo "git push heroku master"
 git push heroku master
 echo "heroku ps:scale web=1"
 heroku ps:scale web=1
 printf "Working ."
-sleep 1; printf "."; sleep 1; printf "."; sleep 1; printf "."; sleep 1; printf "."; sleep 1; printf ".\n";
+sleep 1; printf "."; sleep 1; printf "."; sleep 1; printf "."; sleep 1; printf ".\n";
+
+printf "\n"
+printf "DEBUGGER PIN CODE\n"
+#heroku logs # |grep "pin code"
+heroku logs | grep code:
+printf "\n"
+
 echo "heroku open"
 heroku open
 
-
-printf "See %s\n" $RECIPE_REPO_ABS
+printf "Heroku temp repo: %s\n" $RECIPE_REPO_ABS
 
 exit 0
