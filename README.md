@@ -1,2 +1,2 @@
 # esignature-recipes-python
-Multiple eSignature recipes writting in Python
+Multiple eSignature recipes in Python
