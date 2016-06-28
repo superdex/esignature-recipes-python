@@ -2,9 +2,165 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Recipe Index</h1>
-    <h3>
-    <ul>	
-	    <li><a href="py_010_webhook">Webhook recipe</a></li>
-    </ul></h3>
-    {% endblock %}
+    <div class="framework-home-page">
+        <section id="home-auth-section">
+            <div><span id="home-auth">Checking authentication status...</span>
+                <button type="button" class="btn btn-default" id="unauthenticate" data-endpoint="auth"
+                        data-response="auth_delete">Delete Authentication</button></div>
+            <div id="auth-params">
+                <p>Use the <a href="https://admindemo.docusign.com/api-integrator-key" target="_blank">Administration tool</a>
+                    to create and update your Integration Keys (Client IDs). Use the Integrations/API and Keys section of the tool.</p>
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#oauth-code" aria-controls="oauth-code" role="tab" data-toggle="tab">OAuth Authorization Code Grant</a></li>
+                    <li role="presentation"><a href="#oauth-pw" aria-controls="oauth-pw" role="tab" data-toggle="tab">Legacy OAuth Password Grant</a></li>
+                    <li role="presentation"><a href="#ds-legacy" aria-controls="ds-legacy" role="tab" data-toggle="tab">DocuSign Legacy Authentication</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="oauth-code">
+                        <h3>Authentication technique: OAuth Authorization Code Grant</h3>
+                        <p>Used for server-based user applications that can secure your Client ID’s Secret Key.</p>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Server Settings</h3>
+                            </div>
+                            <div class="panel-body">
+                                <form>
+                                    <div class="row">
+                                        <div class="form-group col-md-4">
+                                            <label for="code_client_id">Client ID (Integration Key)</label>
+                                            <input type="text" class="form-control" id="code_client_id" name="code_client_id" placeholder="Client ID">
+                                            <small class="text-muted">In the DocuSign authentication system, OAuth Client IDs and Integration Keys are the same.</small>
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <label for="code_secret_key">Secret Key</label>
+                                            <input type="password" class="form-control" id="code_secret_key" name="code_secret_key" placeholder="Secret Key">
+                                            <small class="text-muted">The secret key for this Client ID.</small>
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <label for="code_redirect_uri">Redirect URI</label>
+                                            <input type="text" class="form-control" id="code_redirect_uri" name="code_redirect_uri" placeholder="Redirect URI">
+                                            <small class="text-muted">Must match a setting for the Client ID (Integration Key). Edit the settings via the
+                                                <a href="https://admindemo.docusign.com/api-integrator-key" target="_blank">DocuSign Admin tool</a>.
+                                                The URI does not have to be visible on the Internet, it does need to be accessible to the user’s browser.</small>
+                                        </div>
+                                        <input type="hidden" name="type" value="oauth_code" />
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <button type="button" class="btn btn-primary" data-endpoint="auth" data-response="auth" data-feedback="feedback-code">Submit and Authenticate</button>
+                                        </div>
+                                        <div class="col-md-12 feedback" id="feedback-code">
+                                            <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="oauth-pw">
+                        <h3>Legacy OAuth Password Grant</h3>
+                        <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.
+                            Preferred over the DocuSign Legacy Authencation since the authenticated user’s password is not needed after the token is obtained.</p>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Settings</h3>
+                            </div>
+                            <div class="panel-body">
+                                <form>
+                                    <div class="row">
+                                        <div class="form-group col-md-4">
+                                            <label for="pw_email">Email address</label>
+                                            <input type="email" class="form-control" id="pw_email" name="pw_email" placeholder="Email">
+                                            <small class="text-muted">Email address for your “Service Account.”</small>
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <label for="pw_pw">Password</label>
+                                            <input type="password" class="form-control" id="pw_pw" name="pw_pw" placeholder="Password">
+                                            <small class="text-muted">Password for your “Service Account.”</small>
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <label for="pw_client_id">Integration key</label>
+                                            <input type="text" class="form-control" id="pw_client_id" name="pw_client_id" placeholder="Integration key">
+                                            <small class="text-muted">Integration key.</small>
+                                        </div>
+                                        <input type="hidden" name="type" value="oauth_pw" />
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <button type="button" class="btn btn-primary" data-endpoint="auth" data-response="auth" data-feedback="feedback-pw">Submit and Authenticate</button>
+                                        </div>
+                                        <div class="col-md-12 feedback" id="feedback-pw">
+                                            <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="ds-legacy">
+                        <h3>DocuSign Legacy Authentication</h3>
+                        <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.</p>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Server Settings</h3>
+                            </div>
+                            <div class="panel-body">
+                                <form>
+                                    <div class="row">
+                                        <div class="form-group col-md-4">
+                                            <label for="legacy_email">Email address</label>
+                                            <input type="email" class="form-control" id="legacy_email" name="legacy_email" placeholder="Email">
+                                            <small class="text-muted">Email address for your “Service Account.”</small>
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <label for="legacy_pw">Password</label>
+                                            <input type="password" class="form-control" id="legacy_pw" name="legacy_pw" placeholder="Password">
+                                            <small class="text-muted">Password for your “Service Account.”</small>
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <label for="legacy_client_id">Integration key</label>
+                                            <input type="text" class="form-control" id="legacy_client_id" name="legacy_client_id" placeholder="Integration key">
+                                            <small class="text-muted">Integration key.</small>
+                                        </div>
+                                        <input type="hidden" name="type" value="ds_legacy" />
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <button type="button" class="btn btn-primary" data-endpoint="auth" data-response="auth" data-feedback="feedback-legacy">Submit and Authenticate</button>
+                                        </div>
+                                        <div class="col-md-12 feedback" id="feedback-legacy">
+                                            <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="busy"><div class="spinner">
+            <div class="rect1"></div>
+            <div class="rect2"></div>
+            <div class="rect3"></div>
+            <div class="rect4"></div>
+            <div class="rect5"></div>
+        </div></section>
+        <section id="recipe-index" style="display:none;">
+            <h1>Recipe Index</h1>
+            <h3><ul>
+                <li><a href="py_004_email_send">Signing request via email</a></li>
+                <!-- <li><a href="py_010_webhook">Webhook recipe</a></li> -->
+            </ul></h3>
+        </section>
+    </div>
+{% endblock %}

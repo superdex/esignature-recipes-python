@@ -5,9 +5,12 @@ from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
 
 @app.route('/')
-@app.route('/index')
 def index():
     return render_template('home.html', title='Home - Python Recipes', base_url=ds_recipe_lib.get_base_url(0))
+
+@app.route('/index')
+def r_index():
+    redirect("/")
 
 ################################################################################
 ################################################################################
@@ -25,6 +28,16 @@ def set_auth():
 def delete_auth():
     return jsonify(ds_authentication.delete_auth())
 
+@app.route('/auth_redirect', methods=['GET'])
+def auth_redirect():
+    err = ds_authentication.auth_redirect()
+    # err is False or an error message
+    # We will use the Flash technique to show the message on the home page.
+    # Or a simpler alternative would be to show the error message on an intermediate
+    # page, with a "Continue" link to the home page
+    if err:
+        flash(err)
+    return redirect("/")
 
 
 ################################################################################

@@ -9,125 +9,12 @@ from flask import request
 # See https:#urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
 
-# Set environment variables DS_USER_EMAIL, DS_USER_PW, and DS_INTEGRATION_ID
-# Globals variables
-ds_user_email = "" 
-ds_user_pw = "" 
-ds_integration_id = ""
-ds_account_id = ""
-ds_base_url = ""
-ds_headers = ""
-email_count = 2 # Used to make email addresses unique.
-
 # Global constants
 ds_api_login_url = "https://demo.docusign.net/restapi/v2/login_information" # change for production
 ca_bundle = "app/static/assets_master/ca-bundle.crt"
 temp_email_server = "mailinator.com" # Used for throw-away email addresses
-b64_pw_prefix="ZW5jb"
-b64_pw_clear_prefix="encoded"
 
-def init (arg_ds_user_email, arg_ds_user_pw, arg_ds_integration_id, arg_ds_account_id = None):
-    # if ds_account_id is null then the user's default account will be used
-    # if ds_user_email is "***" then environment variables are used
-    # Returns msg: None means no problem. Otherwise there is a problem
     
-    global ds_user_email, ds_user_pw, ds_integration_id, ds_account_id, ds_base_url, ds_headers, email_count
-
-    if (arg_ds_user_email == "***"):
-        arg_ds_user_email = os.environ.get("DS_USER_EMAIL")
-        arg_ds_user_pw = os.environ.get("DS_USER_PW")
-        arg_ds_integration_id = os.environ.get("DS_INTEGRATION_ID")
-        
-    if (not isinstance(arg_ds_user_email, basestring) or len(arg_ds_user_email) < 7):
-        return "No DocuSign login settings! " + \
-        "Either set in the script or use environment variables DS_USER_EMAIL, DS_USER_PW, and DS_INTEGRATION_ID"
-        # If the environment variables are set, but it isn't working, check that the
-        # your http:#us.php.net/manual/en/ini.core.php#ini.variables-order ini setting includes "E" in the string.
-        # See http:#php.net/manual/en/reserved.variables.environment.php
-
-
-    # Decode the pw if it is in base64
-    if (b64_pw_prefix == arg_ds_user_pw[:len(b64_pw_prefix)]):
-        # it was encoded
-        arg_ds_user_pw = base64.b64decode(arg_ds_user_pw)
-        arg_ds_user_pw = arg_ds_user_pw[len(b64_pw_clear_prefix):] # remove prefix
-
-    ds_user_email = arg_ds_user_email
-    ds_user_pw = arg_ds_user_pw
-    ds_integration_id = arg_ds_integration_id
-    ds_account_id = arg_ds_account_id
-    
-    # construct the authentication header:
-    ds_headers = {'Accept': 'application/json',
-        'X-DocuSign-Authentication': "<DocuSignCredentials><Username>" + ds_user_email + 
-        "</Username><Password>" + ds_user_pw + "</Password><IntegratorKey>" + 
-        ds_integration_id + "</IntegratorKey></DocuSignCredentials>"}
-        
-    return None
-    
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-
-def login():
-    # Login (to retrieve baseUrl and accountId)
-    global ds_user_email, ds_user_pw, ds_integration_id, ds_account_id, ds_base_url, ds_headers, email_count
-    try:
-        r = requests.get(ds_api_login_url, headers=ds_headers)
-    except requests.exceptions.RequestException as e:
-        return ({'ok': false, 'msg': "Error calling DocuSign login: " + e})
-        
-    status = r.status_code
-    if (status != 200): 
-        return ({'ok': false, 'msg': "Error calling DocuSign login, status is: " + str(status)})
-
-    # get the baseUrl and accountId from the response body
-    response = r.json()
-    # Example response:
-    # { "loginAccounts": [ 
-    #       { "name": "DocuSign", 
-    #         "accountId": "1374267", 
-    #         "baseUrl": "https:#demo.docusign.net/restapi/v2/accounts/1374267", 
-    #         "isDefault": "true",
-    #         "userName": "Recipe Login", 
-    #         "userId": "d43a4a6a-dbe7-491e-9bad-8f7b4cb7b1b5", 
-    #         "email": "temp2+recipe@kluger.com", 
-    #         "siteDescription": ""
-    #      } 
-    # ]}
-    #
-    
-    found = False
-    errMsg = ""
-    # Get account_id and base_url. 
-    if (ds_account_id == None or ds_account_id == False):
-        # Get default
-        for account in response["loginAccounts"]:
-            if (account["isDefault"] == "true"):
-                ds_account_id = account["accountId"]
-                ds_base_url = account["baseUrl"]
-                found = True
-                break
-                
-        if (not found):
-            errMsg = "Could not find default account for the username."
-    else:
-        # get the account's base_url
-        for account in response["loginAccounts"]:
-            if (account["accountId"] == ds_account_id):
-                ds_base_url = account["baseUrl"]
-                found = True
-                break
-        if (not found):
-            errMsg = "Could not find baseUrl for account " + ds_account_id
-    
-    return {'ok': found, 'msg': errMsg} 
-
-########################################################################
-########################################################################
 ########################################################################
 ########################################################################
 ########################################################################
@@ -147,11 +34,8 @@ def get_signer_email(email):
 def make_temp_email():
     # just create something unique to use with maildrop.cc
     # Read the email at http:#maildrop.cc/inbox/<mailbox_name>  
-    global ds_user_email, ds_user_pw, ds_integration_id, ds_account_id, ds_base_url, ds_headers, email_count
     ip = "100"
-    email_count = math.pow(email_count, 2)
-    email = str(email_count) + str(time.time())
-    email = base64.b64encode (email)
+    email = base64.b64encode (os.urandom(15))
     email = "a" + re.sub(r'[^A-Za-z0-9]', '', email) # strip non-alphanumeric characters
     return email + "@" + temp_email_server
 

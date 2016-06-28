@@ -11,26 +11,90 @@
     // ds_params is set by the page as a script tag when the page is loaded.
 	// 
 	// Private global variabls for the functions
-	var toc_items = [], // array of the items that are being displayed
+	var toc_items = [], // array of the notification items that are being displayed
 		// The array is in normal sort order -- latest item is at the end
 		envelope_terminal_statuses = ["Completed", "Declined", "Voided", 
 			"AuthoritativeCopy", "TransferCompleted", "Template"],
 	 	countdown_interval_id = false,
-		countdown_i = 100,
+		countdown_i,
 		ace_editor = false; 
 	
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+    //
+    // Page specific JS
+    // Framework Home Page
+    function framework_home_page() {
+        if (! $(".framework-home-page")) {
+            return;
+        }
+        set_redirect_urls();
+        home_auth_start();
+    }
+
+    function set_redirect_urls(){
+        var redirect_uri = "auth_redirect",
+            location = window.location,
+            url = location.protocol + '//' + location.host + location.pathname + redirect_uri;
+
+        $("#code_redirect_uri, #implicit_redirect_uri").val(url);
+    }
+
+	function home_auth_start(){
+		// Queries the server to determine authentication status
+		// If authenticated, set status
+		// Else set status and enable user to submit authentication information
+		var auth_status_url = "auth",
+            target = "#home-auth",
+            auth_params = "#auth-params",
+            busy = "#busy",
+            recipe_index = "#recipe-index",
+            unauthenticate = "#unauthenticate";
+        $.ajax({url: auth_status_url + "?" + Date.now()})
+			.done(function(data, textStatus, jqXHR) {
+                $(target).html(data.description);
+                if (data.authenticated) {
+                    $(recipe_index).show();
+                    $(unauthenticate).show();
+                } else {
+                    $(auth_params).show()
+                }
+			})
+			.fail(function(jqXHR, textStatus, errorThrown) {
+			    $(target).html("<h3>Problem</h3><p>" + textStatus + "</p>");
+			})
+            .always(function(){
+                $(busy).hide();
+            })
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 
     function set_ajax_buttons() {
         // An example button: 
-        // <p class="margintop"><button id="startbtn" type="button" class="btn btn-primary"
-        // data-endpoint="login" data-response="newpage_get">Login!</button></p>
-        // 
+        // <button id="startbtn" type="button" class="btn btn-primary"
+        // data-endpoint="login" data-response="newpage_get">Login!</button>
+        //
+        // data-endpoint is the url for the new page or ajax call
+        // data-response sets details on how to handle the req and response
+        //    newpage_get simply loads the endpoint page
+        //    Other than newpage_get: do an Ajax call
+        //    Ajax Verb: POST, except for auth_delete which does a DELETE
+        //  data-feedback the id of the Feedback html. If not present, then one will be created
+        //
         // 1. set an on-click listener
         // 2. Add extra html after the button
-        var new_sibling = "<h3 style='display:none;'>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>";
-        $('button[data-endpoint]').click(ajax_click).parent().after(new_sibling);
+        var feedback_html = 
+            "<div class='feedback' style='display:none;'><h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3></div>";
+
+        $('button[data-response]').each(function each_ajax_button (i, el){
+            var feedback = $(el).attr( "data-feedback" );
+            if (feedback === undefined) {
+                $(el).parent().after(feedback_html);
+            }
+            $(el).click(ajax_click);
+        })
     }
     
     var ajax_click = function (e){
@@ -38,12 +102,15 @@
         var el = event.target,
             endpoint = $(el).attr( "data-endpoint" ),
             response = $(el).attr( "data-response" ),
-            feedback_el = $(el).parent().next(),
-            counter_el = feedback_el.children().first(),
+            verb = response == "auth_delete" ? "delete" : "post",
+            feedback = $(el).attr( "data-feedback" ),
+            feedback_el = (feedback === undefined) ? $(el).parent().next() : $("#" + feedback),
+            counter_el = feedback_el.children().first().children().first(),
             countdown = function(){countdown_i -= 1; counter_el.text(countdown_i)},
             countdown_id
         ;
         
+        countdown_i = 100;
         button_disable(el);
         feedback_el.show();
         counter_el.text(countdown_i);
@@ -52,11 +119,61 @@
         // newpage responses: simply transfer over to the new page
         if (response==="newpage_get") {
             window.location = endpoint;
+        } else {
+            send_ajax_click(el, endpoint, response, feedback_el, verb);
         }
-        
-    
     }
-    
+
+    function send_ajax_click(button, endpoint, response, feedback_el, verb){
+        // endpoint is the url
+        // response tells us about the request, how to handle, etc
+
+        var form = $(button).closest("form"),
+            req_data = $(form).serializeJSON(),
+            home_auth = "#home-auth",
+            auth_params = "#auth-params",
+            recipe_index = "#recipe-index",
+            unauthenticate = "#unauthenticate";
+
+        var ajax_done = function (data, textStatus, jqXHR) {
+            if (response === "auth") {
+                // Requesting authentication
+                if (data.err) {
+                    $(feedback_el).html("<h3>Problem</h3><p>" + data.err + "</p>");
+                    return;
+                }
+                if (data.redirect) {
+                    window.location = data.redirect;
+                    return;
+                }
+                // No data.err therefore success!
+                $(home_auth).html(data.auth_status.description);
+                $(auth_params).hide();
+                $(recipe_index).show();
+                $(unauthenticate).show();
+            } else if (response === "auth_delete") {
+                window.location.reload();
+            }
+        }
+
+        $.ajax({
+			url: endpoint,
+           	type: verb,
+            data: req_data,
+            contentType: "application/json; charset=utf-8",
+			dataType: "json"
+			})
+			.done(ajax_done)
+			.fail(function(jqXHR, textStatus, errorThrown) {
+			    $(feedback_el).html("<h3>Problem</h3><p>" + textStatus + "</p>");
+			})
+            .always(function(){
+				button_enable(button);
+                // Delay 20 seconds, then $(feedback_el).hide();
+            })
+        }
+
+
         
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -429,6 +546,9 @@
 		// show_xml({data: {xml_url: "foo.xml"}}); // For testing: loads local foo.xml
 		show_status();
         set_ajax_buttons();
+        
+        // page specific JS
+        framework_home_page();
 	});
 	
 	
@@ -448,6 +568,14 @@ Array.prototype.find||(Array.prototype.find=function(r){if(null===this)throw new
 // Array.includes polyfill
 Array.prototype.includes||(Array.prototype.includes=function(r){"use strict";var t=Object(this),e=parseInt(t.length)||0;if(0===e)return!1;var n,a=parseInt(arguments[1])||0;a>=0?n=a:(n=e+a,0>n&&(n=0));for(var s;e>n;){if(s=t[n],r===s||r!==r&&s!==s)return!0;n++}return!1});
 
+/**
+ * jQuery serializeObject
+ * @copyright 2014, macek <paulmacek@gmail.com>
+ * @link https://github.com/macek/jquery-serialize-object
+ * @license BSD
+ * @version 2.5.0
+ */
+!function(e,i){if("function"==typeof define&&define.amd)define(["exports","jquery"],function(e,r){return i(e,r)});else if("undefined"!=typeof exports){var r=require("jquery");i(exports,r)}else i(e,e.jQuery||e.Zepto||e.ender||e.$)}(this,function(e,i){function r(e,r){function n(e,i,r){return e[i]=r,e}function a(e,i){for(var r,a=e.match(t.key);void 0!==(r=a.pop());)if(t.push.test(r)){var u=s(e.replace(/\[\]$/,""));i=n([],u,i)}else t.fixed.test(r)?i=n([],r,i):t.named.test(r)&&(i=n({},r,i));return i}function s(e){return void 0===h[e]&&(h[e]=0),h[e]++}function u(e){switch(i('[name="'+e.name+'"]',r).attr("type")){case"checkbox":return"on"===e.value?!0:e.value;default:return e.value}}function f(i){if(!t.validate.test(i.name))return this;var r=a(i.name,u(i));return l=e.extend(!0,l,r),this}function d(i){if(!e.isArray(i))throw new Error("formSerializer.addPairs expects an Array");for(var r=0,t=i.length;t>r;r++)this.addPair(i[r]);return this}function o(){return l}function c(){return JSON.stringify(o())}var l={},h={};this.addPair=f,this.addPairs=d,this.serialize=o,this.serializeJSON=c}var t={validate:/^[a-z_][a-z0-9_]*(?:\[(?:\d*|[a-z0-9_]+)\])*$/i,key:/[a-z0-9_]+|(?=\[\])/gi,push:/^$/,fixed:/^\d+$/,named:/^[a-z0-9_]+$/i};return r.patterns=t,r.serializeObject=function(){return new r(i,this).addPairs(this.serializeArray()).serialize()},r.serializeJSON=function(){return new r(i,this).addPairs(this.serializeArray()).serializeJSON()},"undefined"!=typeof i.fn&&(i.fn.serializeObject=r.serializeObject,i.fn.serializeJSON=r.serializeJSON),e.FormSerializer=r,r});
 
 
 
