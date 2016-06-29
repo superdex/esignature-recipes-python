@@ -11,6 +11,7 @@ body.recipes {
 #auth-params {margin-top: 20px; display:none;}
 #unauthenticate {display:none; margin-left: 20px;}
 .feedback {display: none;}
+span.feedback {margin-left:2em;}
 .alert {margin-top:20px;}
 .newdata {font-style: italic;} /* value of the data has changed! */
 #status_left {background-color: #B9CEF3;}	

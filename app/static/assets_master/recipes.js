@@ -25,7 +25,7 @@
     // Page specific JS
     // Framework Home Page
     function framework_home_page() {
-        if (! $(".framework-home-page")) {
+        if ($(".framework-home-page").length == 0) {
             return;
         }
         set_redirect_urls();
@@ -70,6 +70,42 @@
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
+
+	function set_up_spin_links() {
+		// For any "a" or "button" elements with data-do-spin="_id_", add an on_click
+		// listener that will start up a spinner when the link is clicked
+		var spin_listener = function(e){
+			var spinner = e.data;
+			$("#" + spinner).show("linear", 1000);
+		};
+
+		$('button[data-do-spin], a[data-do-spin]').each(
+			function add_spin_listenr (i, el){
+            	var spinner = $(el).attr( "data-do-spin" );
+            	$(el).click(spinner, spin_listener);
+        })
+	}
+
+    function set_up_countdown_feedback(){
+        // data-count-feedback="feedback1"
+
+        var count_feedback_click = function (e){
+            var feedback = e.data,
+                counter_el = $("#" + feedback).children().first().children().first(),
+                countdown = function(){countdown_i -= 1; counter_el.text(countdown_i)},
+                countdown_id;
+
+            countdown_i = 100;
+            $("#" + feedback).show();
+            counter_el.text(countdown_i);
+		    countdown_id = setInterval(countdown, 300);
+        }
+
+        $('[data-count-feedback]').each(function each_count_feedback (i, el){
+            var feedback = $(el).attr( "data-count-feedback" );
+            $(el).click(feedback, count_feedback_click);
+        })
+    }
 
     function set_ajax_buttons() {
         // An example button: 
@@ -546,6 +582,8 @@
 		// show_xml({data: {xml_url: "foo.xml"}}); // For testing: loads local foo.xml
 		show_status();
         set_ajax_buttons();
+		set_up_spin_links();
+        set_up_countdown_feedback();
         
         // page specific JS
         framework_home_page();
