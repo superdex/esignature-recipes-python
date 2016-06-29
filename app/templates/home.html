@@ -13,14 +13,14 @@
                 <!-- Nav tabs -->
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a href="#oauth-code" aria-controls="oauth-code" role="tab" data-toggle="tab">OAuth Authorization Code Grant</a></li>
-                    <li role="presentation"><a href="#oauth-pw" aria-controls="oauth-pw" role="tab" data-toggle="tab">Legacy OAuth Password Grant</a></li>
-                    <li role="presentation"><a href="#ds-legacy" aria-controls="ds-legacy" role="tab" data-toggle="tab">DocuSign Legacy Authentication</a></li>
+                    <li role="presentation"><a href="#oauth-pw" aria-controls="oauth-pw" role="tab" data-toggle="tab">Legacy OAuth Token</a></li>
+                    <li role="presentation"><a href="#ds-legacy" aria-controls="ds-legacy" role="tab" data-toggle="tab">Legacy Header Authentication</a></li>
                 </ul>
 
                 <!-- Tab panes -->
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="oauth-code">
-                        <h3>Authentication technique: OAuth Authorization Code Grant</h3>
+                        <h3>OAuth Authorization Code Grant</h3>
                         <p>Used for server-based user applications that can secure your Client ID’s Secret Key.</p>
                         <div class="panel panel-default">
                             <div class="panel-heading">
@@ -63,9 +63,10 @@
                         </div>
                     </div>
                     <div role="tabpanel" class="tab-pane" id="oauth-pw">
-                        <h3>Legacy OAuth Password Grant</h3>
+                        <h3>Legacy OAuth Token</h3>
                         <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.
-                            Preferred over the DocuSign Legacy Authencation since the authenticated user’s password is not needed after the token is obtained.</p>
+                            Recommended over Legacy Header Authentication since the authenticated user’s password is not needed after the token is obtained.
+                        </p>
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Settings</h3>
@@ -90,7 +91,7 @@
                                             <input type="text" class="form-control" id="pw_client_id" name="pw_client_id" placeholder="Integration key">
                                             <small class="text-muted">Integration key.</small>
                                         </div>
-                                        <input type="hidden" name="type" value="oauth_pw" />
+                                        <input type="hidden" name="type" value="legacy_oauth" />
                                     </div>
                                     <div class="row">
                                         <div class="col-md-12">
@@ -105,8 +106,9 @@
                         </div>
                     </div>
                     <div role="tabpanel" class="tab-pane" id="ds-legacy">
-                        <h3>DocuSign Legacy Authentication</h3>
-                        <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.</p>
+                        <h3>Legacy Header Authentication</h3>
+                        <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.
+                        Not recommended: use Legacy OAuth Token instead.</p>
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Server Settings</h3>
@@ -158,7 +160,9 @@
         <section id="recipe-index" style="display:none;">
             <h1>Recipe Index</h1>
             <h3><ul>
+                <li><a href="py_001_embedded_signing">Embedded Signing</a></li>
                 <li><a href="py_004_email_send">Signing request via email</a></li>
+                <li><a href="py_002_email_send_template">Using a template via email</a></li>
                 <!-- <li><a href="py_010_webhook">Webhook recipe</a></li> -->
             </ul></h3>
         </section>

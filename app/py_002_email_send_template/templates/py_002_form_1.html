@@ -1,0 +1,55 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Use a Template in a Signature Request</h1>
+    <p>This recipe uses an existing template from your DocuSign account in a new signature request envelope.</p>
+    <h2>1. Create a Template</h2>
+    <p>Please log into your DocuSign Demo (Sandbox) account and create a template as follows:</p>
+    <ul>
+        <li>Name the template "NDA 1"</li>
+        <li>Download and then use the <a href="../../static/sample_documents_master/NDA.pdf">NDA Sample document</a> for the template</li>
+        <li>Create two <i>roles</i> in the template, "signer 1" and "cc". The role names must be exactly as shown since the software must
+            reference the same role names or the integration will fail.</li>
+        <li>Tag the last page of the template's document: create tabs (fields) for the <i>signer 1</i> role:
+            <ul>
+                <li>A Signature tab</li>
+                <li>A Name tab: the full name of the signer</li>
+                <li>A Date Signed tab</li>
+                <li>A Text tab: the name of the company</li>
+            </ul>
+            You can also use the Advanced properties of the Text tag to change the tag's Data Label to "company".
+            The last page of the document should now look similar to the following:
+            <br /> <img src="../../static/images/py_002_tags.png" class="margintop bordered"/>
+        </li>
+    </ul>
+
+    <h2>2. Envelope Data</h2>
+    <p>Complete this form or use the defaults.</p>
+    <div class="panel-body">
+        <form action="send" method="post">
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label for="template_name">Template name</label>
+                    <input type="text" class="form-control" id="template_name" name="template_name" value="NDA 1">
+                    <small class="text-muted">The name of the template in your DocuSign account</small>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label for="company_name">Company name</label>
+                    <input type="text" class="form-control" id="company_name" name="company_name" value="ACME Widgets">
+                    <small class="text-muted">The "Company" text field in the template will be initialized to this value.</small>
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary" data-feedback="feedback1">Send the Signature Request!</button>
+                </div>
+                <div class="col-md-12 feedback" id="feedback1">
+                    <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

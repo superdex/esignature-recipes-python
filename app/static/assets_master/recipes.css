@@ -5,8 +5,8 @@ body.recipes {
   padding: 40px 15px;
   text-align: center;
 }
+#recipe-index li {margin-top: .3em;}
 .margintop {margin-top: 1.7em;}
-
 #home-auth-section {background-color: #d7e5fb; padding: 30px}
 #auth-params {margin-top: 20px; display:none;}
 #unauthenticate {display:none; margin-left: 20px;}
@@ -17,6 +17,14 @@ body.recipes {
 #working {margin-top: 20px;}
 .workinghide {color: #B9CEF3;}
 .workingshow {color: black;}
+
+img.bordered {
+  border-radius: 10px 10px 10px 10px;
+  -moz-border-radius: 10px 10px 10px 10px;
+  -webkit-border-radius: 10px 10px 10px 10px;
+  border: 2px solid blueviolet;
+  }
+
 .toc_item {
 	border-bottom-color: white;
 	border-bottom-width: .2em;
