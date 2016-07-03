@@ -3,6 +3,7 @@ from app import app
 import os.path
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
+from app.lib_master_python import ds_webhook
 
 @app.route('/')
 def index():
@@ -39,6 +40,32 @@ def auth_redirect():
         flash(err)
     return redirect("/")
 
+
+################################################################################
+################################################################################
+
+# Webhook
+@app.route('/webhook_status', methods=['GET'])
+def get_webhook_status():
+    return jsonify(ds_webhook.get_webhook_status())
+
+@app.route('/webhook_status', methods=['POST'])
+def set_webhook_status():
+    return jsonify(ds_webhook.set_webhook_status())
+
+@app.route('/webhook', methods=['POST']) # The listener called by DocuSign
+def webhook():
+    return jsonify(ds_webhook.webhook_listener())
+
+@app.route('/webhook_status_page/<envelope_id>') # initial status page
+def webhook_status_page(envelope_id):
+    r = ds_webhook.status_page(envelope_id)
+    return render_template('status_page.html', title='Notifications - Webhook--Python', data=r, base_url=ds_recipe_lib.get_base_url(1))
+
+@app.route('/webhook_status_items/<envelope_id>') # list all status items
+def webhook_status_items(envelope_id):
+    r = ds_webhook.status_items(envelope_id)
+    return jsonify(items=r)
 
 ################################################################################
 ################################################################################

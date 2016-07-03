@@ -54,8 +54,7 @@
 			.done(function(data, textStatus, jqXHR) {
                 $(target).html(data.description);
                 if (data.authenticated) {
-                    $(recipe_index).show();
-                    $(unauthenticate).show();
+                    webhook_status();
                 } else {
                     $(auth_params).show()
                 }
@@ -67,7 +66,39 @@
                 $(busy).hide();
             })
 	}
-
+    
+    function webhook_status(){
+        // Check the webhook status.
+        // If "ask" then ask the user what should be done.
+		var webhook_status_url = "webhook_status",
+            target = "#home-auth",
+            webhook_form = "#webhook-form",
+            recipe_index = "#recipe-index",
+            unauthenticate = "#unauthenticate";
+        $.ajax({url: webhook_status_url + "?" + Date.now()})
+			.done(function(data, textStatus, jqXHR) {
+                if (data.status ==='ask') {
+                    show_webhook_status(data);
+                    $(webhook_form).show();
+                } else {
+                    $(recipe_index).show();
+                    $(unauthenticate).show();
+                }
+			})
+			.fail(function(jqXHR, textStatus, errorThrown) {
+			    $(target).html("<h3>Problem</h3><p>" + textStatus + "</p>");
+			})
+            .always(function(){
+                $(busy).hide();
+            })
+	}
+    
+    function show_webhook_status(status) {
+        // Set the form with the status info
+        $(webhook_form).show();
+    }
+    
+    
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 

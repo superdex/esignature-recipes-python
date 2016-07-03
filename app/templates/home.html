@@ -157,6 +157,59 @@
             <div class="rect4"></div>
             <div class="rect5"></div>
         </div></section>
+        <section id="webhook-form">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Webhook Settings</h3>
+                </div>
+                <div class="panel-body">
+                    <p>The DocuSign webhook (Connect) feature enables your app to be proactively notified by the DocuSign
+                        platform whenever an envelope or envelope recipient’s status changes.</p>
+                    <p>To be notified, your app needs to be accessible from the public Internet. If you’re not on the Internet,
+                    use a service such as <a href="https://ngrok.com/" target="_blank">ngrok</a> to establish a tunnel to your localhost.</p>
+                    <p>You can also open a “pinhole” in your firewall or use a DMZ network to receive the incoming notifications from DocuSign.</p>
+                    <p>More information about <a href="https://docs.docusign.com/esign/guide/usage/status_and_events.html"
+                           target="_blank">webhook status notifications.</a></p>
+                    <form class="margintop">
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <label for="webhook_status">Webhook status</label>
+                                <select class="form-control" id="webhook_status" name="webhook_status">
+                                    <option value="no">No, do not use webhook status updates</option>
+                                    <option value="yes">Yes, use webhook status updates</option>
+                                </select>
+                                <small class="text-muted">Webhook updates require Internet access to your app’s webhook listener endpoint.</small>
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <label for="webhook_server">Webhook server</label>
+                                <input type="text" class="form-control" id="webhook_server" name="webhook_server">
+                                <small class="text-muted">HTTP can be used with the Demo/Sandbox system. You can include a port number,
+                                    eg. http://s1.example.com:45123</small>
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <label for="code_redirect_uri">Redirect URI</label>
+                                <input type="text" class="form-control" id="XXcode_redirect_uri" name="code_redirect_uri" placeholder="Redirect URI">
+                                <small class="text-muted">Must match a setting for the Client ID (Integration Key). Edit the settings via the
+                                    <a href="https://admindemo.docusign.com/api-integrator-key" target="_blank">DocuSign Admin tool</a>.
+                                    The URI does not have to be visible on the Internet, it does need to be accessible to the user’s browser.</small>
+                            </div>
+                            <input type="hidden" name="type" value="oauth_code" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-primary" data-endpoint="auth" data-response="auth" data-feedback="feedback-code">Submit and Authenticate</button>
+                            </div>
+                            <div class="col-md-12 feedback" id="feedback-code">
+                                <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </section>
         <section id="recipe-index" style="display:none;">
             <h1>Recipe Index</h1>
             <h3><ul>
