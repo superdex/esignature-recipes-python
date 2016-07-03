@@ -38,6 +38,7 @@ def get_webhook_status():
 
     Returns:
     webhook_status = {
+        err: False or a problem string.
         status:
             yes: use the listener_url
             no: User has told us to not use the webhook
@@ -56,6 +57,7 @@ def get_webhook_status():
         session['webhook'] = webhook # Set it!
 
     return {
+            'err': False,
             'status': webhook['status'],
             'url_begin': webhook['url_begin'],
             'url_end': webhook['url_end'],
@@ -84,6 +86,42 @@ def webhook_default():
         }
     return webhook
 
+def set_webhook_status():
+    """Enables the webhook status to be set for the session.
+
+    The Request body:
+    webhook_status, url_begin
+
+    The Response:
+    Same as from get_webhook_status
+    """
+
+    req = request.get_json()
+    webhook_status = req["webhook_status"]
+    url_begin = req["url_begin"]
+
+    if not (webhook_status=="no" or webhook_status == "yes"):
+        return {"err": "Please select a webhook status"}
+    if len(url_begin) < 7:
+        return {"err": "Please enter a server address, including http or https"}
+
+    webhook = {
+        'enabled': webhook_status == "yes",
+        'status': webhook_status,
+        'url_begin': url_begin,
+        'url_end': webhook_path,
+        'listener_url': url_begin + webhook_path
+    }
+    session["webhook"] = webhook # Set it!
+
+    return {
+        'err': False,
+        'status': webhook['status'],
+        'url_begin': webhook['url_begin'],
+        'url_end': webhook['url_end'],
+        'listener_url': webhook['listener_url']
+    }
+
 
 def eventNotificationObj():
     """Return false or an eventNotification object that should be added to an Envelopes: create call
@@ -91,7 +129,11 @@ def eventNotificationObj():
     Uses the session["webhook"] object to determine the situation
     """
 
-    webhook_url = ds_recipe_lib.get_base_url() + webhook_path
+    webhook = session['webhook']
+    if not webhook['enabled']:
+        return False
+
+    webhook_url = webhook['listener_url']
     event_notification = {"url": webhook_url,
         "loggingEnabled": "true", # The api wants strings for true/false
         "requireAcknowledgment": "true",
@@ -121,44 +163,19 @@ def eventNotificationObj():
         }
     return event_notification
 
-def foo():
+def webhook_instructions(envelope_id):
     # Instructions for reading the email
-    html =  ("<h2>Signature request sent!</h2>" +
-            "<p>Envelope ID: " + envelope_id + "</p>" +
-            "<p>Signer: " + ds_signer1_name + "</p>" +
-            "<p>CC: " + ds_cc1_name + "</p>" +
-            "<h2>Next steps</h2>" +
-            "<h3>1. View the incoming notifications and documents</h3>" +
+    html =  ("<h3>1. View the incoming notifications and documents</h3>" +
             "<p><a href='" + ds_recipe_lib.get_base_url() + "/status_page/" + envelope_id + "'" +
-            "  class='btn btn-primary' role='button' target='_blank' style='margin-right:1.5em;'>" +
-            "View Notification Files</a> (A new tab/window will be used.)</p>" +
-            "<h3>2. Respond to the Signature Request</h3>")
+            "  class='btn btn-primary wh' role='button' target='_blank'>" +
+            "View Notification Files</a> (A new tab/window will be used.)</p>")
 
-    ds_signer1_email_access = ds_recipe_lib.get_temp_email_access(ds_signer1_email)
-    if (ds_signer1_email_access):
-        # A temp account was used for the email
-        html += "<p>Respond to the request via your mobile phone by using the QR code: </p>" + \
-                "<p>" + ds_recipe_lib.get_temp_email_access_qrcode(ds_signer1_email_access) + "</p>" + \
-                "<p> or via <a target='_blank' href='" + ds_signer1_email_access + "'>your web browser.</a></p>"
+    webhook = session['webhook']
+    if not webhook['enabled']:
+        return False
     else:
-        # A regular email account was used
-        html += "<p>Respond to the request via your mobile phone or other mail tool.</p>" + \
-                "<p>The email was sent to " + ds_signer1_name + " &lt;" + ds_signer1_email + "&gt;</p>"
+        return html
 
-    html += "<p>Webhook url: " + webhook_url + "</p>"
-
-    return {"ok": True,
-        "envelope_id": envelope_id,
-        "ds_signer1_email": ds_signer1_email,
-        "ds_signer1_name": ds_signer1_name,
-        "ds_signer1_access": ds_signer1_email_access,
-        "ds_signer1_qr": ds_signer1_email,
-        "ds_cc1_email": ds_cc1_email,
-        "ds_cc1_name": ds_cc1_name,
-        "webhook_url": webhook_url,
-        "html": html
-    }
-    
 ########################################################################
 ########################################################################
 
@@ -364,52 +381,6 @@ def get_pdf_filename(doc_type, pdf_name):
         filename = doc_type + "_" + pdf_name
     
     return filename
-
-########################################################################
-########################################################################
-
-def nda_fields():
-    # The fields for the sample document "NDA"
-    # Create 4 fields, using anchors 
-    #   * signer1sig
-    #   * signer1name
-    #   * signer1company
-    #   * signer1date
-    fields = {
-    "signHereTabs": [{
-        "anchorString": "signer1sig",
-        "anchorXOffset": "0",
-         "anchorYOffset": "0",
-        "anchorUnits": "mms",
-        "recipientId": "1",
-        "name": "Please sign here",
-        "optional": "false",
-        "scaleValue": 1,
-        "tabLabel": "signer1sig"}],
-    "fullNameTabs": [{
-        "anchorString": "signer1name",
-         "anchorYOffset": "-6",
-        "fontSize": "Size12",
-        "recipientId": "1",
-        "tabLabel": "Full Name",
-        "name": "Full Name"}],
-    "textTabs": [{
-        "anchorString": "signer1company",
-         "anchorYOffset": "-8",
-        "fontSize": "Size12",
-        "recipientId": "1",
-        "tabLabel": "Company",
-        "name": "Company",
-        "required": "false"}],
-    "dateSignedTabs": [{
-        "anchorString": "signer1date",
-         "anchorYOffset": "-6",
-        "fontSize": "Size12",
-        "recipientId": "1",
-        "name": "Date Signed",
-             "tabLabel": "Company"}]
-    }
-    return fields
 
 ########################################################################
 ########################################################################

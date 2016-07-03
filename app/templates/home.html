@@ -165,7 +165,7 @@
                 <div class="panel-body">
                     <p>The DocuSign webhook (Connect) feature enables your app to be proactively notified by the DocuSign
                         platform whenever an envelope or envelope recipient’s status changes.</p>
-                    <p>To be notified, your app needs to be accessible from the public Internet. If you’re not on the Internet,
+                    <p>To be notified, your app’s listener URL needs to be accessible from the public Internet. If you’re not on the Internet,
                     use a service such as <a href="https://ngrok.com/" target="_blank">ngrok</a> to establish a tunnel to your localhost.</p>
                     <p>You can also open a “pinhole” in your firewall or use a DMZ network to receive the incoming notifications from DocuSign.</p>
                     <p>More information about <a href="https://docs.docusign.com/esign/guide/usage/status_and_events.html"
@@ -182,26 +182,25 @@
                             </div>
 
                             <div class="form-group col-md-4">
-                                <label for="webhook_server">Webhook server</label>
-                                <input type="text" class="form-control" id="webhook_server" name="webhook_server">
-                                <small class="text-muted">HTTP can be used with the Demo/Sandbox system. You can include a port number,
-                                    eg. http://s1.example.com:45123</small>
+                                <label for="url_begin">Webhook URL: beginning part of the URL</label>
+                                <input type="text" class="form-control" id="url_begin" name="url_begin">
+                                <small class="text-muted">HTTP or HTTPS can be used with the Demo/Sandbox system.
+                                    Optional: you can include a port number and/or part of the path,
+                                    eg. http://s1.example.com:45123/app.</small>
                             </div>
 
                             <div class="form-group col-md-4">
-                                <label for="code_redirect_uri">Redirect URI</label>
-                                <input type="text" class="form-control" id="XXcode_redirect_uri" name="code_redirect_uri" placeholder="Redirect URI">
-                                <small class="text-muted">Must match a setting for the Client ID (Integration Key). Edit the settings via the
-                                    <a href="https://admindemo.docusign.com/api-integrator-key" target="_blank">DocuSign Admin tool</a>.
-                                    The URI does not have to be visible on the Internet, it does need to be accessible to the user’s browser.</small>
+                                <label for="url_end">Final part of the URL</label>
+                                <input type="text" class="form-control" id="url_end" name="url_end" readonly>
+                                <small class="text-muted">The last part of the webhook URL</small>
                             </div>
-                            <input type="hidden" name="type" value="oauth_code" />
                         </div>
                         <div class="row">
                             <div class="col-md-12">
-                                <button type="button" class="btn btn-primary" data-endpoint="auth" data-response="auth" data-feedback="feedback-code">Submit and Authenticate</button>
+                                <button type="button" class="btn btn-primary" data-endpoint="webhook_status" data-response="webhook"
+                                        data-feedback="feedback-webhook">Save</button>
                             </div>
-                            <div class="col-md-12 feedback" id="feedback-code">
+                            <div class="col-md-12 feedback" id="feedback-webhook">
                                 <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
                             </div>
                         </div>

@@ -10,7 +10,7 @@ body.recipes {
 #home-auth-section {background-color: #d7e5fb; padding: 30px}
 #auth-params {margin-top: 20px; display:none;}
 #unauthenticate {display:none; margin-left: 20px;}
-.feedback {display: none;}
+.feedback, #options {display: none;}
 span.feedback {margin-left:2em;}
 .alert {margin-top:20px;}
 .newdata {font-style: italic;} /* value of the data has changed! */
@@ -18,8 +18,10 @@ span.feedback {margin-left:2em;}
 #working {margin-top: 20px;}
 .workinghide {color: #B9CEF3;}
 .workingshow {color: black;}
-#webhook-form {margin-top: 3em;}
+#webhook-form {margin-top: 3em; display: none;}
 #webhook-form .panel-body {background-color: #d7e5fb;}
+.navbar {margin-bottom: 0px;}
+button.wh {margin-right:1.5em;} /* webhook button */
 
 img.bordered {
   border-radius: 10px 10px 10px 10px;

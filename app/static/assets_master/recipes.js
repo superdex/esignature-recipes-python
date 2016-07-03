@@ -30,6 +30,7 @@
         }
         set_redirect_urls();
         home_auth_start();
+        $("#options").show().click(function(){webhook_status(true)}); // Only show options on home page nav
     }
 
     function set_redirect_urls(){
@@ -54,6 +55,7 @@
 			.done(function(data, textStatus, jqXHR) {
                 $(target).html(data.description);
                 if (data.authenticated) {
+                    $(unauthenticate).show();
                     webhook_status();
                 } else {
                     $(auth_params).show()
@@ -67,22 +69,19 @@
             })
 	}
     
-    function webhook_status(){
+    function webhook_status(always_show = false){
         // Check the webhook status.
-        // If "ask" then ask the user what should be done.
+        // If always_show or "ask" then ask the user what should be done.
 		var webhook_status_url = "webhook_status",
             target = "#home-auth",
-            webhook_form = "#webhook-form",
             recipe_index = "#recipe-index",
             unauthenticate = "#unauthenticate";
         $.ajax({url: webhook_status_url + "?" + Date.now()})
 			.done(function(data, textStatus, jqXHR) {
-                if (data.status ==='ask') {
+                if (always_show || data.status === 'ask') {
                     show_webhook_status(data);
-                    $(webhook_form).show();
                 } else {
                     $(recipe_index).show();
-                    $(unauthenticate).show();
                 }
 			})
 			.fail(function(jqXHR, textStatus, errorThrown) {
@@ -95,7 +94,11 @@
     
     function show_webhook_status(status) {
         // Set the form with the status info
-        $(webhook_form).show();
+        $('#webhook_status option[value=' + status.status + ']').attr('selected','selected');
+        $("#url_begin").val(status.url_begin);
+        $("#url_end").val(status.url_end);
+        $("#feedback-webhook").html("<h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>").hide();
+        $("#webhook-form").show();
     }
     
     
@@ -215,11 +218,19 @@
                 }
                 // No data.err therefore success!
                 $(home_auth).html(data.auth_status.description);
-                $(auth_params).hide();
-                $(recipe_index).show();
                 $(unauthenticate).show();
+                $(auth_params).hide();
+                webhook_status();
             } else if (response === "auth_delete") {
                 window.location.reload();
+            } else if (response === "webhook") {
+                if (data.err) {
+                    $(feedback_el).html("<h3>Problem</h3><p>" + data.err + "</p>");
+                    return;
+                }
+                // No data.err therefore success!
+                $("#webhook-form").hide();
+                $(recipe_index).show();
             }
         }
 
