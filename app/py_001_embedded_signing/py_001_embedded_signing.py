@@ -183,11 +183,6 @@ def send():
             "<button type='submit' class='btn btn-primary'>" + sign_button_text + "</button>" +
             "</form>")
 
-    # if (on_internet):
-        # A temp account was used for the email
-        #html += ("<p>Respond to the request via your mobile phone by using the QR code: </p>" +
-        #        "<p>" + ds_recipe_lib.get_temp_email_access_qrcode(ds_signer1_email_access) + "</p>"
-
     return {
         "err": False,
         "envelope_id": envelope_id,
