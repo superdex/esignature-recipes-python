@@ -1,9 +1,9 @@
-from flask import Flask, render_template, flash, redirect, session, url_for, request, g, jsonify
+from flask import render_template, flash, redirect, jsonify
 from app import app
-import os.path
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
 from app.lib_master_python import ds_webhook
+import httplib
 
 @app.route('/')
 def index():
@@ -55,12 +55,13 @@ def set_webhook_status():
 
 @app.route('/webhook', methods=['POST']) # The listener called by DocuSign
 def webhook():
-    return jsonify(ds_webhook.webhook_listener())
+    ds_webhook.webhook_listener()
+    return ("", httplib.NO_CONTENT) # no content
 
 @app.route('/webhook_status_page/<envelope_id>') # initial status page
 def webhook_status_page(envelope_id):
     r = ds_webhook.status_page(envelope_id)
-    return render_template('status_page.html', title='Notifications - Webhook--Python', data=r, base_url=ds_recipe_lib.get_base_url(1))
+    return render_template('webhook_status_page.html', title='Notifications - Webhook--Python', data=r, base_url=ds_recipe_lib.get_base_url(2))
 
 @app.route('/webhook_status_items/<envelope_id>') # list all status items
 def webhook_status_items(envelope_id):

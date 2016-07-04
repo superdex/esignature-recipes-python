@@ -3,7 +3,7 @@
 # Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
-import os, base64, json
+import os, base64, json, requests, logging
 
 from app.lib_master_python import ds_recipe_lib
 from flask import request, session
@@ -123,7 +123,7 @@ def set_webhook_status():
     }
 
 
-def eventNotificationObj():
+def get_eventNotification_object():
     """Return false or an eventNotification object that should be added to an Envelopes: create call
 
     Uses the session["webhook"] object to determine the situation
@@ -164,9 +164,9 @@ def eventNotificationObj():
     return event_notification
 
 def webhook_instructions(envelope_id):
-    # Instructions for reading the email
+    """ Instructions for reading the notifications"""
     html =  ("<h3>1. View the incoming notifications and documents</h3>" +
-            "<p><a href='" + ds_recipe_lib.get_base_url() + "/status_page/" + envelope_id + "'" +
+            "<p><a href='" + ds_recipe_lib.get_base_url(2) + "/webhook_status_page/" + envelope_id + "'" +
             "  class='btn btn-primary wh' role='button' target='_blank'>" +
             "View Notification Files</a> (A new tab/window will be used.)</p>")
 
@@ -180,36 +180,45 @@ def webhook_instructions(envelope_id):
 ########################################################################
 
 def status_page(envelope_id):
-    # Get envelope information
+    """Information for the status (notifications) page
+
+    Returns:
+        err: False or an error msg
+        envelope: The envelope status info received
+        ds_params: JSON string format for use by the Javascript on the page.
+            {status_envelope_id, url}  # url is the base url for this app
+    """
+
+    if 'auth' in session:
+        auth = session['auth']
+        if not auth["authenticated"]:
+            return {"err": "Please authenticate with DocuSign."}
+    else:
+        return {"err": "Please authenticate with DocuSign."}
+
+    # Calls Envelopes: get. See https://docs.docusign.com/esign/restapi/Envelopes/Envelopes/get/
     # Calls GET /accounts/{accountId}/envelopes/{envelopeId}
-    
-    url = ds_recipe_lib.ds_base_url + "/envelopes/" + envelope_id
-    ds_params = json.dumps(
-            {"status_envelope_id": envelope_id, "url": ds_recipe_lib.get_base_url(2)})
-    result = {'ok': True, 'msg': None}
-
-    r = ds_recipe_lib.login()
-    if (not r["ok"]):
-        result = {'ok': False, 'msg': "Error logging in"}
-        return {"result": result, "ds_params": ds_params}
+    url = auth["base_url"] + "/envelopes/{}".format(envelope_id)
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
     try:
-        r = requests.get(url, headers=ds_recipe_lib.ds_headers)
+        r = requests.get(url, headers=ds_headers)
     except requests.exceptions.RequestException as e:
-        result = {'ok': False, 'msg': "Error calling Envelopes:get: " + str(e)}
-        return {"result": result, "ds_params": ds_params}
-        
-    status = r.status_code
-    if (status != 200): 
-        result = {'ok': False, 'msg': "Error calling DocuSign Envelopes:get, status is: " + str(status)}
-        return {"result": result, "ds_params": ds_params}
+        return {'err': "Error calling Templates:list: " + str(e)}
 
-    return {"result": result, "envelope": r.json(), "ds_params": ds_params}
+    status = r.status_code
+    if (status != 200):
+        return ({'err': "Error calling DocuSign Envelopes:get<br/>Status is: " +
+                        str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
+
+    ds_params = json.dumps(
+        {"status_envelope_id": envelope_id, "url": ds_recipe_lib.get_base_url(2)})
+    return {"err": False, "envelope": r.json(), "ds_params": ds_params}
 
 ########################################################################
 ########################################################################
 
 def status_items(envelope_id):
-    # List of info about the envelope's event items received
+    """List of info about the envelope's event items that were received"""
     files_dir_url = ds_recipe_lib.get_base_url(2) + "/static/files/" + envelope_id_to_dir(envelope_id)
     env_dir = get_envelope_dir(envelope_id)
     results = []
@@ -227,17 +236,36 @@ def status_items(envelope_id):
 ########################################################################
 
 def status_item(filepath, filename, files_dir_url):
-    # summary information about the notification
+    """summary information about the notification"""
     
     f = open(filepath)
     data = f.read()
-                      
+
     # Note, there are many options for parsing XML in Python
     # For this recipe, we're using Beautiful Soup, http://www.crummy.com/software/BeautifulSoup/
-
     xml = BeautifulSoup(data, "xml")
     envelope_id = xml.EnvelopeStatus.EnvelopeID.string
-    
+
+    # Get envelope's attributes. Since the recipients also have "Status" we CAN NOT just use
+    # xml.EnvelopeStatus.Status.string since that returns the first Status *descendant* of EnvelopeStatus
+    # (We want the first child). So we get the children this way:
+    #
+    # Set defaults for fields that may not be present
+    sender_email = envelope_delivered_timestamp = envelope_created_timestamp = envelope_signed_timestamp =  None
+    envelope_completed_timestamp = None
+    # Now fill in the values that we can find:
+    for child in xml.EnvelopeStatus:
+        if child.name == "Status": envelope_status = child.string
+        if child.name == "TimeGenerated": time_generated = child.string
+        if child.name == "Subject": subject = child.string
+        if child.name == "UserName": sender_user_name = child.string
+        if child.name == "Email": sender_email = child.string
+        if child.name == "Sent": envelope_sent_timestamp = child.string
+        if child.name == "Created": envelope_created_timestamp = child.string
+        if child.name == "Delivered": envelope_delivered_timestamp = child.string
+        if child.name == "Signed": envelope_signed_timestamp = child.string
+        if child.name == "Completed": envelope_completed_timestamp = child.string
+
     # iterate through the recipients
     recipients = []
     for recipient in xml.EnvelopeStatus.RecipientStatuses.children:
@@ -254,9 +282,9 @@ def status_item(filepath, filename, files_dir_url):
             "status": recipient.Status.string
         })
         
-    documents = [];
+    documents = []
     # iterate through the documents if the envelope is Completed
-    if (xml.EnvelopeStatus.Status.string == "Completed" and xml.DocumentPDFs):
+    if envelope_status == "Completed" and xml.DocumentPDFs:
         for pdf in xml.DocumentPDFs.children:
             if (pdf.string == "\n"):
                 continue
@@ -267,29 +295,29 @@ def status_item(filepath, filename, files_dir_url):
                 "name": pdf.Name.string,
                 "url": files_dir_url + '/' + doc_filename
             })
-        
+
     result = {
         "envelope_id": envelope_id,
         "xml_url": files_dir_url + '/' + filename,
-        "time_generated": xml.EnvelopeStatus.TimeGenerated.string,
-        "subject": xml.EnvelopeStatus.Subject.string,
-        "sender_user_name": xml.EnvelopeStatus.UserName.string,
-        "sender_email": get_string(xml.EnvelopeStatus.Email),
-        "envelope_status": xml.EnvelopeStatus.Status.string,
-        "envelope_sent_timestamp": xml.EnvelopeStatus.Sent.string,
-        "envelope_created_timestamp": xml.EnvelopeStatus.Created.string,
-        "envelope_delivered_timestamp": get_string(xml.EnvelopeStatus.Delivered),
-        "envelope_signed_timestamp": get_string(xml.EnvelopeStatus.Signed),
-        "envelope_completed_timestamp": get_string(xml.EnvelopeStatus.Completed),
+        "time_generated": time_generated,
+        "subject": subject,
+        "sender_user_name": sender_user_name,
+        "sender_email": sender_email,
+        "envelope_status": envelope_status,
+        "envelope_sent_timestamp": envelope_sent_timestamp,
+        "envelope_created_timestamp": envelope_created_timestamp,
+        "envelope_delivered_timestamp": envelope_delivered_timestamp,
+        "envelope_signed_timestamp": envelope_signed_timestamp,
+        "envelope_completed_timestamp": envelope_completed_timestamp,
         "timezone": xml.TimeZone.string,
         "timezone_offset": xml.TimeZoneOffset.string,
         "recipients": recipients,
         "documents": documents}
-    
+
     return result
 
-
 def get_string(element):
+    """Helper for safely pulling string from XML"""
     return None if element == None else element.string
     
 
@@ -303,9 +331,13 @@ def setup_output_dir(envelope_id):
     # So we prefix the envelope ids with E and the timestamps with T
     
     # Make the envelope's directory
-    
     envelope_dir = get_envelope_dir(envelope_id)
-    os.makedirs(envelope_dir)
+    try:
+        os.makedirs(envelope_dir)
+    except OSError as e:
+        if e.errno != 17: # FileExists error
+            raise
+        pass
 
 def get_envelope_dir(envelope_id):
     # Some systems might still not like files or directories to start with numbers.
@@ -340,9 +372,6 @@ def webhook_listener():
     data = request.data # This is the entire incoming POST content.
                         # This is dependent on your web server. In this case, Flask
       
-    # f = open(os.getcwd() + "/app/example_completed_notification.xml")
-    # data = f.read()
-                      
     # Note, there are many options for parsing XML in Python
     # For this recipe, we're using Beautiful Soup, http://www.crummy.com/software/BeautifulSoup/
 

@@ -4,9 +4,9 @@
 {% block content %}
     <h1>Envelope Status via Webhook</h1>
     
-    {% if not data.result.ok %}
+    {% if data.err %}
         <h2>Problem contacting DocuSign</h2>
-        <p>{{data.result.msg}}</p>
+        <p>{{data.err|safe}}</p>
     {% else %}
         <div id="env_info">
             <h4>Subject: {{data.envelope.emailSubject}}</h4>

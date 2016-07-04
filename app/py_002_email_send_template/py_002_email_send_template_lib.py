@@ -9,6 +9,7 @@ import json, socket, certifi, requests, os, base64, re, urllib, shutil
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
 
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_webhook
 from flask import request, session
 
 # Either set the names/email of the recipients, or fake names will be used
@@ -128,11 +129,13 @@ def send():
         "templateRoles": [template_role_signer_1, template_role_cc],
         "status": "sent"
     }
+    eventNotification = ds_webhook.get_eventNotification_object()
+    if eventNotification:
+        data["eventNotification"] = eventNotification
         
     # append "/envelopes" to the baseUrl and use in the request
     url = auth["base_url"] + "/envelopes"
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
-
     try:
         r = requests.post(url, headers=ds_headers, json=data)
     except requests.exceptions.RequestException as e:
@@ -147,12 +150,18 @@ def send():
     envelope_id = data['envelopeId']
     
     # Instructions for reading the email
-    html =  "<h2>Signature request sent!</h2>" + \
-            "<p>Envelope ID: " + envelope_id + "</p>" + \
-            "<p>Signer: " + ds_signer1_name + "</p>" + \
-            "<p>CC: " + ds_cc1_name + "</p>" + \
-            "<h2>Next step:</h2>" + \
-            "<h3>Respond to the Signature Request</h3>"
+    webhook_instructions = ds_webhook.webhook_instructions(envelope_id)
+    html =  ("<h2>Envelope created, Signature request sent!</h2>" +
+            "<p>Envelope ID: " + envelope_id + "</p>" +
+            "<p>Signer: " + ds_signer1_name + "</p>" +
+            "<p>CC: " + ds_cc1_name + "</p>")
+    if webhook_instructions:
+        html += (
+            "<h2>Next steps:</h2>" +
+            webhook_instructions +
+            "<h3>2. Sign the envelope</h3>")
+    else:
+        html += "<h2>Next step:</h2>"
 
     ds_signer1_email_access = ds_recipe_lib.get_temp_email_access(ds_signer1_email)
     if (ds_signer1_email_access):

@@ -3,12 +3,13 @@
 # Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
-import json, socket, certifi, requests, os, base64, time, re, urllib, shutil
+import requests, os, base64, time, urllib
 # See http://requests.readthedocs.org/ for information on the requests library
 # See https://urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
 
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_webhook
 from flask import request, session
 
 # Either set the names/email of the recipients, or fake names will be used
@@ -124,12 +125,17 @@ def send():
                 "recipientId": "2",
                 "routingOrder": "2"}]
     
-    data = {"emailSubject": subject,
+    data = {
+        "emailSubject": subject,
         "documents": documents, 
         "recipients": {"signers": signers, "carbonCopies": ccs},
         "status": "sent"
     }
-        
+
+    eventNotification = ds_webhook.get_eventNotification_object()
+    if eventNotification:
+        data["eventNotification"] = eventNotification
+
     # append "/envelopes" to the baseUrl and use in the request
     url = auth["base_url"] + "/envelopes"
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
@@ -156,11 +162,23 @@ def send():
         "envelopeId": envelope_id}
 
     # Instructions for signing the email
+    webhook_instructions = ds_webhook.webhook_instructions(envelope_id)
     html =  ("<h2>Envelope created, ready to be signed!</h2>" +
             "<p>Envelope ID: " + envelope_id + "</p>" +
             "<p>Signer: " + ds_signer1_name + "</p>" +
-            "<p>CC: " + ds_cc1_name + "</p>" +
+            "<p>CC: " + ds_cc1_name + "</p>")
+    if webhook_instructions:
+        html += (
+            "<h2>Next steps:</h2>" +
+            webhook_instructions +
+            "<h3>2. Sign the envelope</h3>" +
+            "<form action='get_view'>" +
+            "<button type='submit' class='btn btn-primary'>" + sign_button_text + "</button>" +
+            "</form>")
+    else:
+        html += (
             "<h2>Next step:</h2>" +
+
             "<form action='get_view'>" +
             "<button type='submit' class='btn btn-primary'>" + sign_button_text + "</button>" +
             "</form>")

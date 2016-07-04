@@ -17,7 +17,8 @@
 			"AuthoritativeCopy", "TransferCompleted", "Template"],
 	 	countdown_interval_id = false,
 		countdown_i,
-		ace_editor = false; 
+		ace_editor = false,
+        ace_cdn = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/"; // Where ACE loads optional JS from
 	
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -104,22 +105,7 @@
     
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-
-	function set_up_spin_links() {
-		// For any "a" or "button" elements with data-do-spin="_id_", add an on_click
-		// listener that will start up a spinner when the link is clicked
-		var spin_listener = function(e){
-			var spinner = e.data;
-			$("#" + spinner).show("linear", 1000);
-		};
-
-		$('button[data-do-spin], a[data-do-spin]').each(
-			function add_spin_listenr (i, el){
-            	var spinner = $(el).attr( "data-do-spin" );
-            	$(el).click(spinner, spin_listener);
-        })
-	}
-
+    
     function set_up_countdown_feedback(){
         // data-count-feedback="feedback1"
 
@@ -264,65 +250,7 @@
 			$('#' + ds_params.navbar).addClass("active");
 		}
 	}
-	
-	function set_on_send_btn() {
-		// params:
-		// 'send_param' => ["ds_signer1_name"  => $connect_lib->ds_signer1_name,
-		// 				 "ds_signer1_email" => $connect_lib->ds_signer1_email,
-		// 				 "button" => "sendbtn",
-		// 				 "url" => "010.connect.php?op=send2",
-		// 				 "target" => "target"]
-
-		if (typeof ds_params === 'undefined' || ds_params == null 
-			|| typeof ds_params !== 'object' || typeof ds_params.send_param === 'undefined' ) {
-				return; // EARLY return, nothing to do here!
-		}
-		
-		// All's good
-		var send_param = ds_params.send_param,
-			button = "#" + send_param.button,
-			url = send_param.url,
-			target = "#" + send_param.target;
-		
-		$(button).click(function() {
-			button_disable(button);
-			$(target).html("<p>Working...</p>");
-			$.ajax({
-				url: url,
-           		type: 'post',
-            	data: JSON.stringify(send_param),
-            	contentType: "application/json; charset=utf-8",
-				dataType: "json"
-			})
-			.done(function(data, textStatus, jqXHR) {
-				button_enable(button);
-			    $(target).html(data.html);
-				js_requests(data); // nb. may disable the button
-			})
-			.fail(function(jqXHR, textStatus, errorThrown) {
-				button_enable(button);
-			    $(target).html("<h3>Problem</h3><p>" + textStatus + "</p>");
-			})
-		});
-	}
-		
-	function js_requests(data) {
-		// Look for a js field. If it exists, handle...
-		// So far, just handling
-		//   'js' => ['disable_button' => 'sendbtn']];
-		if (data.hasOwnProperty('js')) {
-			data.js.forEach(js_request);
-		}
-	}
-	
-	function js_request(element, index, array) {
-		// So far, just handling
-		//   'js' => ['disable_button' => 'sendbtn']];
-		if (element.hasOwnProperty('disable_button')) {
-			button_disable("#" + element.disable_button);
-		}
-	}
-	
+    
 	function button_disable(id) {
 		$(id).attr("disabled", "disabled");
 	}
@@ -334,6 +262,7 @@
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//
+    // Page specific: webhook status page
 	// Functions for showing the incoming events
 	// Add envelope info to #env_info
 	// The left column ul is #toc, the main column uses xml_info for info and feedback
@@ -351,13 +280,14 @@
 			interval_id;
 		
 		// Keep the humans occupied..
+        countdown_i = 200
 		countdown_interval_id = setInterval(countdown, 300);
 		
 		var fetch_latest = function (){
 			// This function fetches the latest info from the server
 			working_show();
 			$.ajax({
-				url: ds_params.url + "/status_items/" + envelope_id,
+				url: ds_params.url + "/webhook_status_items/" + envelope_id,
             	contentType: "application/json; charset=utf-8",
 				dataType: "json"
 			})
@@ -516,6 +446,7 @@
 				rendered = Mustache.render($('#xml_file_template').html(), item);
 			$(item_info_el).html(rendered);
 			if (! ace_editor) {
+                ace.config.set("workerPath", ace_cdn);
 				ace_editor = ace.edit("editor");
 				ace_editor.setReadOnly(true);
     			ace_editor.setTheme("ace/theme/chrome");
@@ -620,11 +551,9 @@
 	// the mainline
 	$(document).ready(function() {
 		set_nav_bar();
-		set_on_send_btn();
 		// show_xml({data: {xml_url: "foo.xml"}}); // For testing: loads local foo.xml
 		show_status();
         set_ajax_buttons();
-		set_up_spin_links();
         set_up_countdown_feedback();
         
         // page specific JS

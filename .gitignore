@@ -1,8 +1,9 @@
+# App's temp files
+app/static/files/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-
-app/files/*
 
 # C extensions
 *.so
