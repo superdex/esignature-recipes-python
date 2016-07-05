@@ -1,5 +1,7 @@
 """Uses JSON-formated file storage for sessions
 
+NOTE: does not time-out the sessions!
+
 Based on http://flask.pocoo.org/snippets/132/
 """
 
