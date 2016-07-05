@@ -10,6 +10,8 @@ Use the deploy button to immediatelty try this app on Heroku. You can use Heroku
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
+Note: during the Heroku *build* process, the setup.py step for **lxml** takes several minutes since it includes a compilation.
+
 ## Run the app locally
 
 1. Install a recent version of Python 2.x, eg 2.7.11 or later.
