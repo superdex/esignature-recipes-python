@@ -4,15 +4,6 @@
   "keywords": ["python"],
   "addons": [],
   "env": {
-      "DS_USER_EMAIL": {
-        "description": "Developer account email."
-      },
-      "DS_USER_PW": {
-        "description": "Password (may be encoded)"
-      },
-      "DS_INTEGRATION_ID": {
-        "description": "Integration key"
-      },
       "DEBUG": {
         "description": "True for Debug mode or False"
       }      

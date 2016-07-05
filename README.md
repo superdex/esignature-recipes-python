@@ -16,7 +16,7 @@ Use the deploy button to immediatelty try this app on Heroku. You can use Heroku
 1. Install pip
 1. Clone this repo to your computer
 1. `cd` to the repo’s directory
-1. `pip install -r requirements.txt` # installs the applications requirements
+1. `pip install -r requirements.txt` # installs the application’s requirements
 1. `python run.py` # starts the application on port 5000
 1. Use a browser to load [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
