@@ -168,7 +168,7 @@ def webhook_instructions(envelope_id):
     html =  ("<h3>1. View the incoming notifications and documents</h3>" +
             "<p><a href='" + ds_recipe_lib.get_base_url(2) + "/webhook_status_page/" + envelope_id + "'" +
             "  class='btn btn-primary wh' role='button' target='_blank'>" +
-            "View Notification Files</a> (A new tab/window will be used.)</p>")
+            "View Webhook Notifications</a> (A new tab/window will be used.)</p>")
 
     webhook = session['webhook']
     if not webhook['enabled']:

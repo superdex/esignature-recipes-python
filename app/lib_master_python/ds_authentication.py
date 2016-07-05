@@ -20,6 +20,8 @@ oauth_base_url_fragment = "/restapi/v2/accounts/" # Used to create base_url from
 ca_bundle = "app/static/assets_master/ca-bundle.crt"
 oauth_scope = "signature"
 
+
+
 ########################################################################
 ########################################################################
 ########################################################################
@@ -123,6 +125,8 @@ def set_auth_ds_legacy(req):
     Side-effect: Sets Session["auth"]
     Returns err
     """
+
+    # Normally, the client_id (Integration_key) is a constant for the app.
     auth_header_key = 'X-DocuSign-Authentication'
     auth_header_dict = {"Username": req["legacy_email"], "Password": req["legacy_pw"], "IntegratorKey": req["legacy_client_id"]}
     auth_header_value = json.dumps(auth_header_dict)
@@ -149,6 +153,8 @@ def set_auth_legacy_oauth(req):
     Side-effect: Sets Session["auth"]
     Returns err
     """
+
+    # Normally, the client_id (Integration_key) is a constant for the app.
     email = req["pw_email"]
     pw = req["pw_pw"]
     client_id = req["pw_client_id"]
@@ -182,6 +188,8 @@ def set_auth_oauth_code(req):
 
     Returns {err, redirect} where err is False or an error message
     """
+
+    # Normally, the client_id (Integration_key), secret_key, and redirect_uri values are constants for the app.
     client_id = req["code_client_id"]
     secret_key = req["code_secret_key"]
     redirect_uri = req["code_redirect_uri"]

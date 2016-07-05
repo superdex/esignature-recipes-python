@@ -21,7 +21,7 @@ span.feedback {margin-left:2em;}
 #webhook-form {margin-top: 3em; display: none;}
 #webhook-form .panel-body {background-color: #d7e5fb;}
 .navbar {margin-bottom: 0px;}
-button.wh {margin-right:1.5em;} /* webhook button */
+a.wh {margin-right:1.5em;} /* webhook button */
 
 img.bordered {
   border-radius: 10px 10px 10px 10px;
