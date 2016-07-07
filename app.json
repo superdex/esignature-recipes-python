@@ -2,10 +2,5 @@
   "name": "DocuSign Python Recipes",
   "description": "www.docusign.com/dev-center/recipes",
   "keywords": ["python"],
-  "addons": [],
-  "env": {
-      "DEBUG": {
-        "description": "True for Debug mode or False"
-      }      
-   }
+  "addons": []
 }
