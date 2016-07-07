@@ -2,8 +2,14 @@
 
 Repo: esignature-recipes-python
 
-This repo contains a Python Flask application that demonstrates many of the 
-DocuSign Signature REST API recipes.
+This repo contains a Python Flask application that demonstrates several of the 
+DocuSign Signature REST API recipes:
+
+* Embedded signing. See app/py_001_embedded_signing_
+* Sending a signature request via email. See app/py_004_email_send
+* Sending a signature request using a template. See app/py_002_email_send_template
+* Using a webhook to receive status changes. See app/lib_master_python/ds_webhook.py
+* Authenticating with the Signature REST API. See app/lib_master_python/ds_authentication.py
 
 ## Try it on Heroku
 Use the deploy button to immediatelty try this app on Heroku. You can use Heroku’s free service tier, no credit card is needed.
