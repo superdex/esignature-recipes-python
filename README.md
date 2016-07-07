@@ -2,6 +2,8 @@
 
 Repo: esignature-recipes-python
 
+This is a **beta** release. Comments are welcomed.
+
 This repo contains a Python Flask application that demonstrates several of the 
 DocuSign Signature REST API recipes:
 
