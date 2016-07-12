@@ -383,38 +383,7 @@ def auth_token_delete():
             return {"err": "Please authenticate with DocuSign."}
     else:
         return {"err": "Please authenticate with DocuSign."}
-
-    if auth['type'] == "legacy_oauth":
-        # Currently, we can only delete legacy_oauth tokens
-        return authentication_legacy_oauth_revoke(auth)
-    else:
-        return {"err": "Authentication type is {}. This method requires Legacy OAuth authentication".format(auth['type'])}
-
-def authentication_legacy_oauth_revoke(auth):
-    """Revoke a Legacy OAuth token by calling Authentication: revokeOAuthToken method
-
-    See https://docs.docusign.com/esign/restapi/Authentication/Authentication/revokeOAuthToken/
-
-    Returns {err} False, or an error message
-    """
-    # The url is /v2/oauth2/revoke NB, it does NOT include an account number!
-    # The base url includes the account_id. Eg "https://demo.docusign.net/restapi/v2/accounts/1374267"
-    # We need to peel off the accounts/1374267 part so we can call the OAuth token endpoint.
-    url = rm_url_parts(auth["base_url"], 2) + ds_legacy_revokeOAuthToken_uri
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
-    data = {}
-
-    try:
-        r = requests.post(url, headers=ds_headers, json=data)
-    except requests.exceptions.RequestException as e:
-        return {'err': "Error calling Authentication:revokeOAuthToken " + str(e)}
-
-    status = r.status_code
-    if (status != 200):
-        return ({'err': "Error calling DocuSign Authentication:revokeOAuthToken<br/>Status is: " +
-                        str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
-
-    return {'err': False}
+    return {"err": "Unable to delete tokens programmatically at this time."}
 
 ########################################################################
 ########################################################################

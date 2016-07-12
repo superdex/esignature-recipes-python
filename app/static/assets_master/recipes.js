@@ -102,18 +102,10 @@
 			if (auth.type == "oauth_code") {
 				text.push("<p>OAuth Refresh Token: <span style='font-size: xx-small;'>" + auth.refresh_token + ".</span></p>");
 			}
-			
-			// If legacy_oauth then include button to delete the token
-			if (auth.type == "legacy_oauth") {
-				text.push('<p><button type="button" class="btn btn-primary" data-endpoint="auth_token" data-response="delete_show"');
-				text.push('           data-feedback="feedback-auth-delete">Delete the token</button></p>');
-                text.push('<div class="feedback" id="feedback-auth-delete">');
-			    text.push('   <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>');
-				text.push('</div>');
-			}
 		}
+		text.push('<p><button type="button" class="btn" data-close="options-form">Close</button></p>');
 		$(panel).html(text.join("\n"));
-		set_ajax_buttons(); 
+		set_ajax_buttons();
 	}
 	
     
@@ -188,6 +180,8 @@
         //
         // 1. set an on-click listener
         // 2. Add extra html after the button
+		//
+		// ALSO: Sets up listeners for close buttons
         var feedback_html = 
             "<div class='feedback' style='display:none;'><h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3></div>";
 
@@ -198,8 +192,19 @@
             }
             $(el).click(ajax_click);
         })
+
+        $('button[data-close]').each(function each_close_button (i, el){
+            var section = $(el).attr( "data-close" );
+            $(el).click(do_close);
+        })
     }
-    
+
+	var do_close = function(e){
+        var el = event.target,
+            section = $(el).attr( "data-close");
+		$("#" + section).hide(1200);
+	}
+
     var ajax_click = function (e){
         // The user clicked a button
         var el = event.target,

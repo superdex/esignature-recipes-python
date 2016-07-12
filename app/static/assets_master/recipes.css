@@ -7,6 +7,8 @@ body.recipes {
 }
 #recipe-index li {margin-top: .3em;}
 .margintop {margin-top: 1.7em;}
+.marginleft {margin-left: 2.5em;}
+
 #home-auth-section {background-color: #d7e5fb; padding: 30px}
 #auth-params {margin-top: 20px; display:none;}
 #unauthenticate {display:none; margin-left: 20px;}
