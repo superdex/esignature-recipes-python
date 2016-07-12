@@ -55,7 +55,8 @@
         $.ajax({url: auth_status_url + "?" + Date.now()})
 			.done(function(data, textStatus, jqXHR) {
                 $(target).html(data.description);
-                if (data.authenticated) {
+                auth_status_display(data);
+				if (data.authenticated) {
                     $(unauthenticate).show();
                     webhook_status();
                 } else {
@@ -69,8 +70,54 @@
                 $(busy).hide();
             })
 	}
+	
+	function auth_status_display(data){
+		// Save the auth info in the authention information panel
+		var panel = "#authentication-info",
+			auth = data["auth"],
+		  	text = [];
+		
+		
+        // auth: {authenticated: true/false
+        //        user_name
+        //        email
+        //        type: {oauth_code, legacy_oauth, ds_legacy}
+        //        account_id
+        //        base_url           # Used for API calls
+        //        auth_header_key    # Used for API calls
+        //        auth_header_value  # Used for API calls
+        //        refresh_token # OAuth code grant only
+		
+		if (! auth.authenticated) {
+			text.push("<p>Not authenticated.</p>");
+		} else {
+			text.push("<p>Authenticated: yes.</p>");
+			text.push("<p>Type: " + auth.type + ".</p>");
+			text.push("<p>Name: " + auth.user_name + ".</p>");
+			text.push("<p>Email: " + auth.email + ".</p>");
+			text.push("<p>Account id: " + auth.account_id + ".</p>");
+			text.push("<p>Auth header key: " + auth.auth_header_key + ".</p>");
+			text.push("<p>Auth header value: <span style='font-size: xx-small;'>" + auth.auth_header_value + ".</span></p>");
+			text.push("<p>Base URL: " + auth.base_url  + ".</p>");
+			if (auth.type == "oauth_code") {
+				text.push("<p>OAuth Refresh Token: <span style='font-size: xx-small;'>" + auth.refresh_token + ".</span></p>");
+			}
+			
+			// If legacy_oauth then include button to delete the token
+			if (auth.type == "legacy_oauth") {
+				text.push('<p><button type="button" class="btn btn-primary" data-endpoint="auth_token" data-response="delete_show"');
+				text.push('           data-feedback="feedback-auth-delete">Delete the token</button></p>');
+                text.push('<div class="feedback" id="feedback-auth-delete">');
+			    text.push('   <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>');
+				text.push('</div>');
+			}
+		}
+		$(panel).html(text.join("\n"));
+		set_ajax_buttons(); 
+	}
+	
     
-    function webhook_status(always_show = false){
+	function webhook_status(always_show = false){
         // Check the webhook status.
         // If always_show or "ask" then ask the user what should be done.
 		var webhook_status_url = "webhook_status",
@@ -99,7 +146,7 @@
         $("#url_begin").val(status.url_begin);
         $("#url_end").val(status.url_end);
         $("#feedback-webhook").html("<h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>").hide();
-        $("#webhook-form").show();
+        $("#options-form").show();
     }
     
     
@@ -136,7 +183,7 @@
         // data-response sets details on how to handle the req and response
         //    newpage_get simply loads the endpoint page
         //    Other than newpage_get: do an Ajax call
-        //    Ajax Verb: POST, except for auth_delete which does a DELETE
+        //    Ajax Verb: POST, except for delete_reload and delete_show which do a DELETE
         //  data-feedback the id of the Feedback html. If not present, then one will be created
         //
         // 1. set an on-click listener
@@ -158,7 +205,7 @@
         var el = event.target,
             endpoint = $(el).attr( "data-endpoint" ),
             response = $(el).attr( "data-response" ),
-            verb = response == "auth_delete" ? "delete" : "post",
+            verb = (response == "delete_reload" || response == "delete_show") ? "delete" : "post",
             feedback = $(el).attr( "data-feedback" ),
             feedback_el = (feedback === undefined) ? $(el).parent().next() : $("#" + feedback),
             counter_el = feedback_el.children().first().children().first(),
@@ -206,16 +253,24 @@
                 $(home_auth).html(data.auth_status.description);
                 $(unauthenticate).show();
                 $(auth_params).hide();
+				home_auth_start(); // refreshes the authentication status
                 webhook_status();
-            } else if (response === "auth_delete") {
-                window.location.reload();
+            } else if (response === "delete_reload") {
+				window.location.reload();
+			} else if (response === "delete_show") {
+                if (data.err) {
+                    $(feedback_el).html("<h3>Problem</h3><p>" + data.err + "</p>");
+                } else {
+					$(feedback_el).html("<p>Done.</p>");
+				}
+				return;
             } else if (response === "webhook") {
                 if (data.err) {
                     $(feedback_el).html("<h3>Problem</h3><p>" + data.err + "</p>");
                     return;
                 }
                 // No data.err therefore success!
-                $("#webhook-form").hide();
+                $("#options-form").hide();
                 $(recipe_index).show();
             }
         }

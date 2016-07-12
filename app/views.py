@@ -40,6 +40,12 @@ def auth_redirect():
         flash(err)
     return redirect("/")
 
+@app.route('/auth_token', methods=['DELETE'])
+def auth_token_delete():
+    r = ds_authentication.auth_token_delete()
+    # r[err] is False or an error message
+    # Deletes the authentication token on DocuSign
+    return jsonify(r)
 
 ################################################################################
 ################################################################################

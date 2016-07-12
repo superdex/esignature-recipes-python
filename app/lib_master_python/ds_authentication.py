@@ -12,6 +12,7 @@ from flask import request, session
 # Global constants
 ds_account_id = None # If you're looking for a specific account_id, set this var
 ds_legacy_login_url = "https://demo.docusign.net/restapi/v2/login_information" # change for production
+ds_legacy_revokeOAuthToken_uri = "/oauth2/revoke"
 oauth_authentication_server = "https://account-d.docusign.com/" # change for production
 oauth_start = oauth_authentication_server + "/oauth/auth"
 oauth_token = oauth_authentication_server + "/oauth/token"
@@ -71,10 +72,10 @@ def get_auth_status():
         auth = {'authenticated': False}
 
     auth_status['authenticated'] = auth['authenticated']
+    auth_status['auth'] = auth
     if auth['authenticated']:
         auth_status['description'] = 'Authenticated via {} as {} &lt;{}&gt; for the {} account ({})'.format(
-            translator[auth['type']], auth['user_name'], auth['email'], auth['account_name'], auth['account_id']
-        )
+            translator[auth['type']], auth['user_name'], auth['email'], auth['account_name'], auth['account_id'])
     else:
         auth_status['description'] = "You are not authenticated. Please choose an authentication method and submit the information:"
 
@@ -370,6 +371,53 @@ def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
     return {'err': err, 'account_id': account_id, 'base_url': base_url,
             "user_name": user_name, "email": email, "account_name": account_name,
             "auth_header_key": auth_header_key, "auth_header_value": auth_header_value}
+
+def auth_token_delete():
+    """Deletes the authentication token on DocuSign
+
+    Returns {err} -- False or an error message
+    """
+    if 'auth' in session:
+        auth = session['auth']
+        if not auth["authenticated"]:
+            return {"err": "Please authenticate with DocuSign."}
+    else:
+        return {"err": "Please authenticate with DocuSign."}
+
+    if auth['type'] == "legacy_oauth":
+        # Currently, we can only delete legacy_oauth tokens
+        return authentication_legacy_oauth_revoke(auth)
+    else:
+        return {"err": "Authentication type is {}. This method requires Legacy OAuth authentication".format(auth['type'])}
+
+def authentication_legacy_oauth_revoke(auth):
+    """Revoke a Legacy OAuth token by calling Authentication: revokeOAuthToken method
+
+    See https://docs.docusign.com/esign/restapi/Authentication/Authentication/revokeOAuthToken/
+
+    Returns {err} False, or an error message
+    """
+    # The url is /v2/oauth2/revoke NB, it does NOT include an account number!
+    # The base url includes the account_id. Eg "https://demo.docusign.net/restapi/v2/accounts/1374267"
+    # We need to peel off the accounts/1374267 part so we can call the OAuth token endpoint.
+    url = rm_url_parts(auth["base_url"], 2) + ds_legacy_revokeOAuthToken_uri
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    data = {}
+
+    try:
+        r = requests.post(url, headers=ds_headers, json=data)
+    except requests.exceptions.RequestException as e:
+        return {'err': "Error calling Authentication:revokeOAuthToken " + str(e)}
+
+    status = r.status_code
+    if (status != 200):
+        return ({'err': "Error calling DocuSign Authentication:revokeOAuthToken<br/>Status is: " +
+                        str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
+
+    return {'err': False}
+
+########################################################################
+########################################################################
 
 def rm_url_parts (url, remove):
     """Dynamically get the url <remove> steps before the original url"""

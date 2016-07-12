@@ -6,7 +6,7 @@
         <section id="home-auth-section">
             <div><span id="home-auth">Checking authentication status...</span>
                 <button type="button" class="btn btn-default" id="unauthenticate" data-endpoint="auth"
-                        data-response="auth_delete">Delete Authentication</button></div>
+                        data-response="delete_reload">Delete Authentication</button></div>
             <div id="auth-params">
                 <p>Use the <a href="https://admindemo.docusign.com/api-integrator-key" target="_blank">Administration tool</a>
                     to create and update your Integration Keys (Client IDs). Use the Integrations/API and Keys section of the tool.</p>
@@ -158,7 +158,7 @@
             <div class="rect4"></div>
             <div class="rect5"></div>
         </div></section>
-        <section id="webhook-form">
+        <section id="options-form">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">Webhook Settings</h3>
@@ -206,6 +206,14 @@
                             </div>
                         </div>
                     </form>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Authentication Information</h3>
+                </div>
+                <div class="panel-body" id="authentication-info">
+                    <p>Working...</p>
                 </div>
             </div>
 
