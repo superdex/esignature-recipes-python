@@ -17,6 +17,9 @@ ds_signer1_email_orig = "***"
 ds_signer1_name_orig = "***"
 ds_cc1_email_orig = "***"
 ds_cc1_name_orig = "***"
+trace_value = "py_002_email_send_template" # Used for tracing API calls
+trace_key = "X-ray"
+
 
 signer1_role = "signer 1"
 cc_role = "cc" # The signer and cc role names must be in agreement with the template's settings
@@ -62,7 +65,8 @@ def send():
 
     # Templates: list. See https://docs.docusign.com/esign/restapi/Templates/Templates/list/
     url = auth["base_url"] + "/templates?" + "search_text={}".format(urllib.quote(template_name))
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
     try:
         r = requests.get(url, headers=ds_headers)
     except requests.exceptions.RequestException as e:
@@ -90,7 +94,8 @@ def send():
     # Use the Templates: get method to retrieve full info about the template.
     # See https://docs.docusign.com/esign/restapi/Templates/Templates/get/
     url = auth["base_url"] + "/templates/{}".format(urllib.quote(template_id))
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
     try:
         r = requests.get(url, headers=ds_headers)
     except requests.exceptions.RequestException as e:
@@ -105,7 +110,7 @@ def send():
     company_tabLabel = data["recipients"]["signers"][0]["tabs"]["textTabs"][0]["tabLabel"]
 
     #
-    # STEP 2 - Create and send envelope
+    # STEP 3 - Create and send envelope
     #
     # Since we're using a template, this request is relatively small
     # The signer and cc role names must be in agreement with the template's settings
@@ -135,7 +140,8 @@ def send():
         
     # append "/envelopes" to the baseUrl and use in the request
     url = auth["base_url"] + "/envelopes"
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
     try:
         r = requests.post(url, headers=ds_headers, json=data)
     except requests.exceptions.RequestException as e:

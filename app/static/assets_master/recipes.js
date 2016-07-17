@@ -144,79 +144,7 @@
     
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-    //
-    // Page-specific JS: API Logging page
-    function set_up_api_logging_page(){
-        if ($(".api_logs").length == 0) {
-            return;
-        }
-        
-        var logging_status = function _logging_status(e){
-            var logging_status = $("#logging-status"),
-                counter_el = $(logging_status).next()[0],
-                countdown_i,
-                countdown = function(){countdown_i -= 1; $(counter_el).text(countdown_i)},
-                countdown_id;
-            
-            $(logging_status).text("Working... ");
-            countdown_i = 100; countdown_id = setInterval(countdown, 300);
-            $.ajax({
-			    url: "logging_status?" +  Date.now(), type: "GET",
-                contentType: "application/json; charset=utf-8", dataType: "json"})
-			    .done(function(data, textStatus, jqXHR) {
-                    if (data.err) {
-                        $(logging_status).html("<b>Problem:</b> " + data.err);
-                    } else {
-                        $(logging_status).html(data.status);
-                    }
-                })
-			    .fail(function(jqXHR, textStatus, errorThrown) {
-			        $(logging_status).html("<b>Problem:</b> " + textStatus);
-			    })
-                .always(function(){clearInterval(countdown_id); $(counter_el).text("")});
-        }
 
-        var logs_download = function _logs_download(e){
-            var feedback = e.data,
-                feedback_el = $("#" + feedback),
-                counter_el = $(feedback_el).next()[0],
-                countdown_i,
-                countdown = function(){countdown_i -= 1; $(counter_el).text(countdown_i)},
-                countdown_id;
-
-            $(feedback_el).text("Working... ");
-            countdown_i = 100; countdown_id = setInterval(countdown, 300);
-            $.ajax({
-			    url: "logs_download", type: "POST",
-                contentType: "application/json; charset=utf-8", dataType: "json"})
-			    .done(function(data, textStatus, jqXHR) {
-                    if (data.err) {
-                        $(feedback_el).html("<b>Problem:</b> " + data.err);
-                    } else {
-                        $(feedback_el).html(data.status);
-                    }
-                })
-			    .fail(function(jqXHR, textStatus, errorThrown) {
-			        $(feedback_el).html("<b>Problem:</b> " + textStatus);
-			    })
-                .always(function(){clearInterval(countdown_id); $(counter_el).text("")});
-        }
-
-
-        // Add listener for the logging-status-refresh
-        //     ... logging status: <span id="logging-status">tbd</span><span></span><a href="#" id="logging-status-refresh">Refesh<
-        $('#logging-status-refresh').click(logging_status);
-        logging_status(); // Run it once pro-actively on page load
-
-        // Add listener for download
-        // <button type="button" class="btn btn-primary marginleft" id="logging-download" data-feedback="feedback-download">Download Logs</button>
-        var feedback = $('#logging-download').attr("data-feedback");
-        $('#logging-download').click(feedback, logs_download);
-        logs_download({data: feedback}); // Run it once pro-actively on page load
-    }
-    
-    
-    
     function set_up_countdown_feedback(){
         // data-count-feedback="feedback1"
 
@@ -690,7 +618,6 @@
 
         // page specific JS
         framework_home_page();
-        set_up_api_logging_page();
 	});
 	
 	

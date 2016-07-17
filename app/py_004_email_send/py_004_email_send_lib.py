@@ -19,6 +19,9 @@ ds_signer1_email_orig = "***"
 ds_signer1_name_orig = "***"
 ds_cc1_email_orig = "***"
 ds_cc1_name_orig = "***"
+trace_value = "py_004_email_send" # Used for tracing API calls
+trace_key = "X-ray"
+
 
 def send():
     """Sends the envelope
@@ -130,7 +133,8 @@ def send():
         
     # append "/envelopes" to the baseUrl and use in the request
     url = auth["base_url"] + "/envelopes"
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
 
     try:
         r = requests.post(url, headers=ds_headers, json=data)

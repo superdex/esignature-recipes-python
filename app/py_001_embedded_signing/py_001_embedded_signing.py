@@ -24,8 +24,8 @@ ds_cc1_email_orig = "***"
 ds_cc1_name_orig = "***"
 embedded_signing_key = "embedded_signing_key" # Used to store/retrieve the embedded signing details
 return_uri = "/py_001_embedded_signing/return_url" # where DocuSign should redirect to after the person has finished signing
-trace_value = "_trace" # Used for tracing API calls
-trace_key = "X-Trace"
+trace_value = "py_001_embedded_signing" # Used for tracing API calls
+trace_key = "X-ray"
 
 def send():
     """Sends the envelope

@@ -25,6 +25,11 @@ span.feedback {margin-left:2em;}
 .navbar {margin-bottom: 0px;}
 a.wh {margin-right:1.5em;} /* webhook button */
 
+input.inline-checkbox {margin-right:0.5em;margin-left:1.5em;} /* API Logging checkbox */
+.success {background: green;}
+.failure {background: darkred;}
+.sm-circle {width: 1em; height: 1em; border-radius: 50%; display: inline-block;  margin-right: 1.5em;}
+
 img.bordered {
   border-radius: 10px 10px 10px 10px;
   -moz-border-radius: 10px 10px 10px 10px;

@@ -4,9 +4,12 @@
 {% block content %}
     <div class="api_logs" xmlns="http://www.w3.org/1999/html"></div>
     <h1>API Logs</h1>
-    <p>The DocuSign platform stores up to 50 log entries at a time. Download the entries periodically.
+    <p><form><p>The DocuSign platform stores up to 50 log entries at a time. Download the log entries to enable more logging.
     The platform logs all API calls for your account, including those from other clients. To only see your app’s
-    calls, add a <i>trace</i> query parameter to your calls and select the filter option below.</p>
+    calls, add an <i>X-ray</i> header to your calls.
+    <input type="checkbox" id="only-x-ray-check" class="inline-checkbox" checked>Only show X-ray calls</input>
+    <input type="checkbox" id="omit-content" class="inline-checkbox" checked>Omit base64 content</input>
+    </form></p>
     <p id="status">Platform logging status: <span id="logging-status">tbd</span><span></span></span><a href="#" id="logging-status-refresh" class="marginleft">Refesh</a>
         <button type="button" class="btn btn-primary marginleft" id="logging-download" data-feedback="feedback-download">Download Logs</button>
         <span id="feedback-download"></span><span></span>
@@ -32,9 +35,19 @@
     {% raw %}
     <!-- Mustache template for toc entries -->
     <!-- See https://github.com/janl/mustache.js -->
+    <!--//    success: boolean -- was the call successful?
+        //    url: the url for retrieving the call
+        //    file_name: the raw file_name. Can be used for sorting the entries
+        //    x_ray: false if no x_ray header. Otherwise the contents of the header
+        //    method: GET, POST, etc
+        //    request_url: the complete request url
+        //    method_name: the method name used in the log file name
+        //    head: the NOT uuencoded first 1500 bytes of the log entry
+        //    date_time: the call was made before this time
+    -->
     <script id="toc_item_template" type="x-tmpl-mustache">
-    <li class="toc_item">
-    	<h4 class="{{envelope_status_class}}">Envelope: {{envelope_status}}</h4>
+    <li class="toc_item" data-toggle="tooltip" data-placement="right" title="Request {{ request_url }}">
+    	<h4><div class="sm-circle {{css_class}}"></div><span class="http-method">{{method}}</span> {{ method_name }}</h4>
     	{{#recipients}}
     		<p>{{type}}: {{user_name}}<br/>
     			<span class="{{status_class}}">Status: {{status}}</span>
@@ -43,7 +56,7 @@
     </li>
     </script>
 
-    <!-- Mustache template for displaying xml file -->
+    <!-- Mustache template for displaying the log entry -->
     <!-- XML in Ace editor, see http://stackoverflow.com/a/16147926/64904 -->
     <script id="xml_file_template" type="x-tmpl-mustache">
     	<h3>XML Notification Content</h3>
