@@ -12,20 +12,14 @@ from flask import request, session
 # Global constants
 ds_account_id = None # If you're looking for a specific account_id, set this var
 ds_legacy_login_url = "https://demo.docusign.net/restapi/v2/login_information" # change for production
-ds_legacy_revokeOAuthToken_uri = "/oauth2/revoke"
 oauth_authentication_server = "https://account-d.docusign.com/" # change for production
-oauth_start = oauth_authentication_server + "/oauth/auth"
-oauth_token = oauth_authentication_server + "/oauth/token"
-oauth_userInfo = oauth_authentication_server + "/oauth/userinfo"
-oauth_base_url_fragment = "/restapi/v2/accounts/" # Used to create base_url from base_uri
+oauth_start = oauth_authentication_server + "oauth/auth"
+oauth_token = oauth_authentication_server + "oauth/token"
+oauth_userInfo = oauth_authentication_server + "oauth/userinfo"
+oauth_base_url_fragment = "/restapi/v2/" # Used to create base_url from base_uri
 ca_bundle = "app/static/assets_master/ca-bundle.crt"
 oauth_scope = "signature"
 
-
-
-########################################################################
-########################################################################
-########################################################################
 ########################################################################
 ########################################################################
 ########################################################################
@@ -44,6 +38,7 @@ oauth_scope = "signature"
 #        type: {oauth_code, legacy_oauth, ds_legacy}
 #        account_id
 #        base_url           # Used for API calls
+#        base_url_no_account # Used for account-independent API calls. Eg
 #        auth_header_key    # Used for API calls
 #        auth_header_value  # Used for API calls
 #        client_id (integration_key)  # temp storage during authentication
@@ -131,7 +126,7 @@ def set_auth_ds_legacy(req):
     auth_header_key = 'X-DocuSign-Authentication'
     auth_header_dict = {"Username": req["legacy_email"], "Password": req["legacy_pw"], "IntegratorKey": req["legacy_client_id"]}
     auth_header_value = json.dumps(auth_header_dict)
-    r = authentication_login(auth_header_key, auth_header_value) # r is {err, account_id, base_url}
+    r = authentication_login(auth_header_key, auth_header_value) # r is {err, account_id, base_url, base_url_no_account}
 
     if r["err"]:
         return r["err"]
@@ -144,6 +139,7 @@ def set_auth_ds_legacy(req):
         "account_id": r["account_id"],
         "account_name": r["account_name"],
         "base_url": r["base_url"],
+        "base_url_no_account": r["base_url_no_account"],
         "auth_header_key": auth_header_key,
         "auth_header_value": auth_header_value}
     return False
@@ -163,7 +159,7 @@ def set_auth_legacy_oauth(req):
     auth_header_dict = {"Username": email, "Password": pw, "IntegratorKey": client_id}
     auth_header_value = json.dumps(auth_header_dict)
 
-    r = authentication_legacy_oauth_login(auth_header_key, auth_header_value) # r is {err, account_id, base_url}
+    r = authentication_legacy_oauth_login(auth_header_key, auth_header_value) # r is {err, account_id, base_url, base_url_no_account}
     if r["err"]:
         return r["err"]
 
@@ -175,6 +171,7 @@ def set_auth_legacy_oauth(req):
             "account_id": r["account_id"],
             "account_name": r["account_name"],
             "base_url": r["base_url"],
+            "base_url_no_account": r["base_url_no_account"],
             "auth_header_key": r["auth_header_key"],
             "auth_header_value": r["auth_header_value"]}
 
@@ -224,7 +221,7 @@ def set_auth_oauth_code(req):
 def authentication_login(auth_header_key, auth_header_value):
     """Call the Authentication: login method, which is only used for legacy authentication
 
-    Returns {err, account_id, base_url, user_name, email}
+    Returns {err, account_id, base_url, base_url_no_account, user_name, email}
     """
     ds_headers = {'Accept': 'application/json'}
     ds_headers[auth_header_key] = auth_header_value
@@ -233,7 +230,7 @@ def authentication_login(auth_header_key, auth_header_value):
     try:
         r = requests.get(ds_legacy_login_url, headers=ds_headers)
     except requests.exceptions.RequestException as e:
-        err = "Error calling DocuSign login: " + e
+        err = "Error calling DocuSign login: " + str(e)
         return {'err': err}
 
     status = r.status_code
@@ -268,6 +265,7 @@ def authentication_login(auth_header_key, auth_header_value):
                 account_id = account["accountId"]
                 account_name =account["name"]
                 base_url = account["baseUrl"]
+                base_url_no_account = rm_url_parts(base_url, 2)
                 user_name = account["userName"]
                 email = account["email"]
                 found = True
@@ -280,6 +278,7 @@ def authentication_login(auth_header_key, auth_header_value):
         for account in response["loginAccounts"]:
             if (account["accountId"] == ds_account_id):
                 base_url = account["baseUrl"]
+                base_url_no_account = rm_url_parts(base_url, 2)
                 user_name = account["userName"]
                 email = account["email"]
                 account_id = ds_account_id
@@ -289,7 +288,7 @@ def authentication_login(auth_header_key, auth_header_value):
         if (not found):
             err = "Could not find baseUrl for account " + ds_account_id
 
-    return {'err': err, 'account_id': account_id, 'base_url' : base_url,
+    return {'err': err, 'account_id': account_id, 'base_url': base_url, 'base_url_no_account': base_url_no_account,
             "user_name": user_name, "email": email, "account_name": account_name}
 
 def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
@@ -309,7 +308,7 @@ def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
     try:
         r = requests.get(ds_legacy_login_url + "?api_password=true", headers=ds_headers)
     except requests.exceptions.RequestException as e:
-        err = "Error calling DocuSign login: " + e
+        err = "Error calling DocuSign login: " + str(e)
         return {'err': err}
 
     status = r.status_code
@@ -345,6 +344,7 @@ def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
                 account_id = account["accountId"]
                 account_name = account["name"]
                 base_url = account["baseUrl"]
+                base_url_no_account = rm_url_parts(base_url, 2)
                 user_name = account["userName"]
                 email = account["email"]
                 found = True
@@ -357,6 +357,7 @@ def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
         for account in response["loginAccounts"]:
             if (account["accountId"] == ds_account_id):
                 base_url = account["baseUrl"]
+                base_url_no_account = rm_url_parts(base_url, 2)
                 user_name = account["userName"]
                 email = account["email"]
                 account_id = ds_account_id
@@ -368,7 +369,7 @@ def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
 
     auth_header_key = "Authorization"
     auth_header_value = "Bearer " + response["apiPassword"]
-    return {'err': err, 'account_id': account_id, 'base_url': base_url,
+    return {'err': err, 'account_id': account_id, 'base_url': base_url, 'base_url_no_account': base_url_no_account,
             "user_name": user_name, "email": email, "account_name": account_name,
             "auth_header_key": auth_header_key, "auth_header_value": auth_header_value}
 
@@ -460,7 +461,7 @@ def oauth_token_for_code(auth, code):
                 headers={'Authorization': "Basic " + client_secret_b64},
                 data={'grant_type': 'authorization_code', 'code': code})
     except requests.exceptions.RequestException as e:
-        err = "Error calling DocuSign for OAuth token: " + e
+        err = "Error calling DocuSign for OAuth token: " + str(e)
         return err
 
     status = r.status_code
@@ -510,7 +511,7 @@ def get_oauth_user_info():
     try:
         r = requests.get(oauth_userInfo, headers=ds_headers)
     except requests.exceptions.RequestException as e:
-        err = "Error calling DocuSign login: " + e
+        err = "Error calling DocuSign login: " + str(e)
         return err
 
     status = r.status_code
@@ -571,7 +572,8 @@ def get_oauth_user_info():
     auth["email"] = email
     auth["account_id"] = account_id
     auth["account_name"] = account_name
-    auth["base_url"] = base_uri + oauth_base_url_fragment + account_id
+    auth["base_url"] = base_uri + oauth_base_url_fragment + "accounts/" + account_id
+    auth["base_url_no_account"] = base_uri + oauth_base_url_fragment
 
     session["auth"] = auth
 

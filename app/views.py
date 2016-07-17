@@ -3,6 +3,7 @@ from app import app
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
 from app.lib_master_python import ds_webhook
+from app.lib_master_python import ds_api_logging
 import httplib
 
 @app.route('/')
@@ -73,6 +74,24 @@ def webhook_status_page(envelope_id):
 def webhook_status_items(envelope_id):
     r = ds_webhook.status_items(envelope_id)
     return jsonify(items=r)
+
+################################################################################
+################################################################################
+
+# API Logging
+@app.route('/logging_page', methods=['GET'])
+def logging_page():
+    return render_template('log_status_page.html', title='API Logging', base_url=ds_recipe_lib.get_base_url(2))
+
+@app.route('/logs_download', methods=['POST'])
+def logs_download():
+    return jsonify(ds_api_logging.logs_download())
+
+@app.route('/logging_status', methods=['GET'])
+def get_logging_status():
+    return jsonify(ds_api_logging.get_logging_status())
+
+
 
 ################################################################################
 ################################################################################

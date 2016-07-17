@@ -24,7 +24,8 @@ ds_cc1_email_orig = "***"
 ds_cc1_name_orig = "***"
 embedded_signing_key = "embedded_signing_key" # Used to store/retrieve the embedded signing details
 return_uri = "/py_001_embedded_signing/return_url" # where DocuSign should redirect to after the person has finished signing
-
+trace_value = "_trace" # Used for tracing API calls
+trace_key = "X-Trace"
 
 def send():
     """Sends the envelope
@@ -138,7 +139,8 @@ def send():
 
     # append "/envelopes" to the baseUrl and use in the request
     url = auth["base_url"] + "/envelopes"
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
 
     try:
         r = requests.post(url, headers=ds_headers, json=data)
@@ -230,7 +232,8 @@ def get_view():
 
     # append "/envelopes/{envelopeId}/views/recipient" to the baseUrl and use in the request
     url = auth["base_url"] + '/envelopes/{}/views/recipient'.format(embedding_info["envelopeId"])
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
 
     try:
         r = requests.post(url, headers=ds_headers, json=data)
@@ -372,7 +375,8 @@ def get_status(envelope_id):
 
     # append "/envelopes/{envelopeId}" to the baseUrl and use in the request
     url = auth["base_url"] + '/envelopes/{}'.format(envelope_id) + "?cache_buster={}".format(time.time())
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
 
     try:
         r = requests.get(url, headers=ds_headers)
@@ -409,7 +413,8 @@ def get_doc():
     # Retrieve file
     # append the uri parameter to the baseUrl and use in the request
     url = auth["base_url"] + uri
-    ds_headers = {'Accept': 'Accept: application/pdf', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'Accept: application/pdf', auth["auth_header_key"]: auth["auth_header_value"],
+                  trace_key: trace_value}
 
     try:
         r = requests.get(url, headers=ds_headers)
@@ -423,8 +428,6 @@ def get_doc():
 
     # Success!
     return {"err": err, "pdf": r.content, "filename": fn}
-
-
 
 
 # FIN
