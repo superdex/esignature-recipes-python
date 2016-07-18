@@ -91,6 +91,9 @@ def logs_download():
 def get_logging_status():
     return jsonify(ds_api_logging.get_logging_status())
 
+@app.route('/logs_list', methods=['GET'])
+def logs_list():
+    return jsonify(ds_api_logging.logs_list())
 
 
 ################################################################################

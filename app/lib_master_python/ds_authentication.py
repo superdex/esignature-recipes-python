@@ -20,6 +20,9 @@ oauth_base_url_fragment = "/restapi/v2/" # Used to create base_url from base_uri
 ca_bundle = "app/static/assets_master/ca-bundle.crt"
 oauth_scope = "signature"
 
+# When an access token has expired, you'll get the error response:
+# "errorCode": "AUTHORIZATION_INVALID_TOKEN"
+
 ########################################################################
 ########################################################################
 ########################################################################

@@ -96,16 +96,28 @@ def logging_updateSettings():
             "remaining_entries": data["apiRequestLogRemainingEntries"],
             "logging": data["apiRequestLogging"]}
 
-def list_log_entries():
-    """Returns log_entries for all current logs that are downloaded
+def logs_list():
+    """Returns log_entries for all current logs that were previously downloaded
 
-    log_entries: Array of log_entry
-    log_entry: {file_name: the filename of the entry
+    {"err": an error or false
+     "entries": Array of log_entry
+     log_entry: {file_name: the filename of the entry
                 url: for retrieving the file
                 head: first 1500 bytes of the entry, base64 encoded}
+    }
     Strategy: parse the log files on the clients.
     """
-    pass
+    if not check_auth():
+        return {"err": "Please authenticate."}
+    entries = []
+    log_path = get_log_path()
+    log_path_url = ds_recipe_lib.get_base_url(1) + "/" + log_storage_uri + "/" + account_id_to_dir(auth["account_id"]) + "/"
+
+    # Walk the dir
+    for i in os.listdir(log_path):
+        if i.endswith(".txt"):
+            entries.append(api_log_item(os.path.join(log_path, i), i, log_path_url))
+    return {"err": False, "entries": entries}
 
 def logs_download():
     """Download (and then delete) the logs from DocuSign
@@ -120,7 +132,7 @@ def logs_download():
         05_OK_GetEnvelope.txt
         06_OK_SendEnvelope.txt
 
-    Returns {err: False or a problem string, new_log_entries: log_entries }
+    Returns {err: False or a problem string, entries: log_entries }
         returns an array of just the new log_entries
     """
     if not check_auth():
@@ -169,7 +181,7 @@ def logging_do_download():
     ##    return ({'err': "Error calling DocuSign RequestLogs:delete<br/>Status is: " +
     ##                    str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
     ##
-    return {"err": False, "new_entries": entries}
+    return {"err": False, "entries": entries}
 
 def process_new_log_entries():
     """Process the new log entries in the temp dir.
@@ -191,7 +203,6 @@ def process_new_log_entries():
             new_path = os.path.join(log_path, new_file_name)
             os.rename(os.path.join(temp_log_path, i), new_path)
             entries.append(api_log_item(new_path, new_file_name, log_path_url))
-        continue
     return entries
 
 def api_log_item(file_path, file_name, log_path_url):

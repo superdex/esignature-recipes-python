@@ -5,7 +5,9 @@
 	// Private global variabls for the functions
 	var toc_items = [], // array of the notification items that are being displayed
 		ace_editor = false,
-        ace_cdn = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/"; // Where ACE loads optional JS from
+        ace_cdn = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/", // Where ACE loads optional JS from
+        omit_base64 = true,
+        omit_base64_text = "[Base64 data omitted]";
     
     // FORMAT OF THE TOC ENTRIES
     // toc_entries is an array. The element [0] is the oldest, shown at the bottom of the page.
@@ -35,7 +37,6 @@
         // <button type="button" class="btn btn-primary marginleft" id="logging-download" data-feedback="feedback-download">Download Logs</button>
         var feedback = $('#logging-download').attr("data-feedback");
         $('#logging-download').click(feedback, logs_download);
-        logs_download({data: feedback}); // Run it once pro-actively on page load
     }
     
     var logging_status = function _logging_status(e) {
@@ -57,7 +58,7 @@
         })
             .done(function (data, textStatus, jqXHR) {
                 if (data.err) {
-                    $(loging_status).html("<b>Problem:</b> " + data.err);
+                    $(logging_status).html("<b>Problem:</b> " + data.err);
                 } else {
                     $(logging_status).html(data.status);
                 }
@@ -77,7 +78,9 @@
             counter_el = $(feedback_el).next()[0],
             countdown_i,
             countdown = function(){countdown_i -= 1; $(counter_el).text(countdown_i)},
-            countdown_id;
+            countdown_id,
+            stop_feedback = function(){$(feedback_el).html("");clearInterval(countdown_id); $(counter_el).text("");};
+
         $(feedback_el).text("Working... ");
         countdown_i = 100; countdown_id = setInterval(countdown, 300);
         $.ajax({
@@ -85,20 +88,53 @@
             contentType: "application/json; charset=utf-8", dataType: "json"})
             .done(function(data, textStatus, jqXHR) {
                 if (data.err) {
+                    stop_feedback();
                     $(feedback_el).html("<b>Problem:</b> " + data.err);
                 } else {
-                    $(feedback_el).html("");
-                    process_new_items(data);
+                    stop_feedback();
+                    $(feedback_el).html("<b>Processing...</b>");
+                    process_new_items(data, stop_feedback, true);
                 }
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
+                stop_feedback();
                 $(feedback_el).html("<b>Problem:</b> " + textStatus);
+            });
+    }
+    
+    function logs_initial_download(){
+        // Do the initial download of log entries that were already on the server 
+        // (not DocuSign platform)
+        var feedback = "working",
+            feedback_el = $("#" + feedback),
+            counter_el = $(feedback_el).next()[0],
+            countdown_i,
+            countdown = function(){countdown_i -= 1; $(counter_el).text(countdown_i)},
+            countdown_id,
+            stop_feedback = function(){$(feedback_el).html("");clearInterval(countdown_id); $(counter_el).text("");};
+        $(feedback_el).text("Working... ");
+        countdown_i = 100; countdown_id = setInterval(countdown, 300);
+        $.ajax({
+            url: "logs_list" + "?" + Date.now(), type: "GET",
+            contentType: "application/json; charset=utf-8", dataType: "json"})
+            .done(function(data, textStatus, jqXHR) {
+                if (data.err) {
+                    stop_feedback();
+                    $(feedback_el).html("<b>Problem:</b> " + data.err);
+                } else {
+                    stop_feedback();
+                    $(feedback_el).html("<b>Processing...</b>");
+                    process_new_items(data, stop_feedback, false);
+                }
             })
-            .always(function(){clearInterval(countdown_id); $(counter_el).text("")});
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                stop_feedback();
+                $(feedback_el).html("<b>Problem:</b> " + textStatus);
+            });
     }
 
 
-	function process_new_items(data){
+	function process_new_items(data, stop_feedback, animate){
 		// Process the list of items
 		// The data is an array of raw log entries format:
 		// { file_name: "T2016-07-17T13_51_07__00_OK_GetAccountSharedAccess.txt"
@@ -107,7 +143,7 @@
 		// }
         //
         // 
-        data = data.new_entries;
+        data = data.entries;
 		if (data.length == 0) {return;} // nothing to do...
 
 		// Sort the incoming events so the newest (_00) is first.
@@ -116,7 +152,8 @@
         });
 
         // process each new entry
-		data.forEach (function(val, index, arr){add_to_toc(examine(val))});
+		data.forEach (function(val, index, arr){add_to_toc(examine(val), animate)});
+        stop_feedback();
     }
 	
     function examine(item){
@@ -158,67 +195,169 @@
         return item;
     }
 
-	function add_to_toc(item){
-        
+	function add_to_toc(item, animate){
         // Set css class depending on success field
         item.css_class = item.success ? "success-circle" : "failure-circle";
         
 		toc_items.push(item); // We're assuming that we won't receive an item out of order.
 		// Create the new li by using mustache with the template
 	    var rendered = Mustache.render($('#toc_item_template').html(), item);
-		prependListItem("toc", rendered);
+		prependListItem("toc", rendered, animate);
 		// The new item is now the first item in the toc ul.
 		$("#toc").children().first().click(item, show_item).tooltip(); // See http://getbootstrap.com/javascript/#tooltips
 	}
 	
-	function prependListItem(listName, listItemHTML){
+	function prependListItem(listName, listItemHTML, animate){
 		// See http://stackoverflow.com/a/1851486/64904
-	    $(listItemHTML)
-	        .hide()
-	        .css('opacity',0.0)
-	        .prependTo('#' + listName)
-	        .slideDown('slow')
-			.animate({opacity: 1.0});
+	    if (animate) {
+            $(listItemHTML)
+                .hide()
+                .css('opacity',0.0)
+                .prependTo('#' + listName)
+                .slideDown('slow')
+                .animate({opacity: 1.0});
+        } else {
+            $(listItemHTML).prependTo('#' + listName);
+        }
 		window_resized();
 	}
 
 	var show_item = function(event) {
 		// This is a jQuery event handler. See http://api.jquery.com/Types/#Event
 		// It fills in the main column
-		var item = event.data, // our object about the xml notification
-			item_info_el = $("#xml_info");
+		var item = event.data, // our object about the log entry
+			item_info_el = $("#item_info");
 	
 		$(item_info_el).html("<h2>Working...</h2>");
-		$.ajax({
-			url: item.xml_url,
-       		type: 'get',
-		})
+		$.ajax({url: item.url, type: 'get'})
 		.fail(function(jqXHR, textStatus, errorThrown) {
-		    $(item_info_el).html("<h3>Problem: Couldn’t fetch the xml file</h3><p>" + textStatus + "</p>");
+		    $(item_info_el).html(
+                "<h3>Problem: Couldn’t fetch the file</h3><p>URL: " + item.url + "</p><p>Status: " + textStatus + "</p>");
 		})
-		.done(function(data, textStatus, jqXHR) {	
-			var xml_pretty = xml_make_pretty(jqXHR.responseText),
-				rendered = Mustache.render($('#xml_file_template').html(), item);
-			$(item_info_el).html(rendered);
-			if (! ace_editor) {
-                ace.config.set("workerPath", ace_cdn);
-				ace_editor = ace.edit("editor");
-				ace_editor.setReadOnly(true);
-    			ace_editor.setTheme("ace/theme/chrome");
-			    ace_editor.setOption("wrap", "free");
-				ace_editor.$blockScrolling = Infinity;
-				window_resized();
-			    var XMLMode = ace.require("ace/mode/xml").Mode,
-				    ace_session = ace_editor.getSession();
-				ace_session.setMode(new XMLMode());
-				ace_session.setUseWrapMode(true);
-				ace_session.setFoldStyle("markbeginend");
-			}
-			ace_editor.setValue(xml_pretty);
-			ace_editor.getSelection().clearSelection();
-			ace_editor.getSelection().moveCursorToScreen(0,0,true);
-		})
+		.done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item)})
 	}
+
+    var do_show_item = function(data, textStatus, jqXHR, item) {
+        // Parse the item into parsed: {
+        //   raw
+        //   request: {
+        //      method
+        //      method_name: // from name of log file
+        //      date_time:   // request was before this time
+        //      url
+        //      headers
+        //      content_type
+        //      content_type_json: boolean // is the request content-type JSON?
+        //      content_type_multipart: boolean
+        //      json_ok: boolean // Does the JSON parse?
+        //      body
+        //      json // the request, parsed into a json object (iff json_ok)
+        //   response: {
+        //      success:  // boolean, a successful request?
+        //      status:   // eg "201 Created"
+        //      headers
+        //      content_type
+        //      content_type_json: boolean // is the response content-type JSON?
+        //      content_type_multipart: boolean
+        //      json_ok: boolean // Does the JSON parse?
+        //      body
+        //      json // the response, parsed into a json object (iff json_ok)
+
+        var raw = data,
+            parsed = {
+                raw: data,
+                request:{
+                    method: item.method,
+                    method_name: item.method_name,
+                    date_time: item.date_time
+                },
+                response: {
+                    success: item.success
+            }},
+            re_cr_style = /\r\n\r\n/m,
+            cr_style = re_cr_style.test(raw), // Does the file use \r\n as line endings?
+            eol = cr_style ? "\r\n" : "\n",
+            eol_size = eol.length,
+            end_of_line1 = raw.indexOf(eol),
+            line1 = raw.substring(0, end_of_line1).replace("\r\n", "\n");
+
+
+        parsed.request.url = line1.split(" ")[1];
+        raw = raw.substring(end_of_line1 + eol_size); // remove first line
+        var end_of_headers = raw.indexOf(eol + eol);
+        parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+        raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
+
+        // Find the request Content-Type. Eg Content-Type: application/pdf
+        // NB, the request may not have a content type!
+        var ct = content_type(parsed.request.headers);
+        parsed.request.content_type = ct;
+        parsed.request.content_type_json = ct && ct === "application/json";
+        parsed.request.content_type_multipart = ct && ct.includes("multipart");
+
+        var re_status = /^\d{3} [A-Z][A-Za-z]{1,}$/m,
+            end_of_req_body_index = raw.search(re_status);
+
+        parsed.request.body = raw.substring(0, end_of_req_body_index);
+        raw = raw.substring(end_of_req_body_index); // Now raw starts with the status line
+
+        var cr_index = raw.indexOf(eol);
+        parsed.response.status = raw.substring(0, cr_index);
+        raw = raw.substring(cr_index + eol_size); // Now raw starts with the response headers
+        end_of_headers = raw.indexOf(eol + eol);
+        parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+        raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body
+
+        // Find the response content type. Eg Content-Type: application/pdf
+        ct = content_type(parsed.response.headers);
+        parsed.response.content_type = ct;
+        parsed.response.content_type_json = ct === "application/json";
+        parsed.response.content_type_multipart = ct.includes("multipart");
+        parsed.response.body = raw;
+        raw = null;
+
+        // tbd: fill in json bodies with parse error check
+
+
+        // Done parsing!
+        var rendered = Mustache.render($('#item_template').html(), parsed);
+        $("#item_info").html(rendered);
+
+
+        return;
+
+
+        if (! ace_editor) {
+            ace.config.set("workerPath", ace_cdn);
+            ace_editor = ace.edit("editor");
+            ace_editor.setReadOnly(true);
+            ace_editor.setTheme("ace/theme/chrome");
+            ace_editor.setOption("wrap", "free");
+            ace_editor.$blockScrolling = Infinity;
+            window_resized();
+            var XMLMode = ace.require("ace/mode/xml").Mode,
+                ace_session = ace_editor.getSession();
+            ace_session.setMode(new XMLMode());
+            ace_ession.setUseWrapMode(true);
+            ace_session.setFoldStyle("markbeginend");
+        }
+        ace_editor.setValue(data);
+        ace_editor.getSelection().clearSelection();
+        ace_editor.getSelection().moveCursorToScreen(0,0,true);
+	}
+
+    function content_type(headers){
+        // Get the content type, if present in the headers. The headers EOL is "\n"
+        var re_content_type = /^Content-Type: (.*)/m,
+            ct = re_content_type.exec(headers);
+        if (! ct) {
+            return false
+        }
+        ct = ct[1];
+        // Handle if it looks like this: Content-Type: application/json; charset=utf-8
+        ct = ct.split(";")[0]
+        return ct;
+    }
 
 	var window_resized = function(){
 		// resize left column
@@ -226,7 +365,7 @@
 			h = available -  $("#status_left").position().top; 
 			// At least for Chrome, scrollHeight is only defined if there is a scrollbar
 		
-		if ($(window).width() > 991) { $("#status_left").height(h); }
+		// if ($(window).width() > 991) { $("#status_left").height(h); }
 		
 		// resize editor div, 300 min
 		var min = 300;
@@ -309,6 +448,7 @@
             return;
         }
     add_API_Logs_page_listeners();
+    logs_initial_download();
 	window_resized();
 	$(window).resize(window_resized);
 
@@ -322,5 +462,6 @@
 	///////////////////////////////////////////////////////////////////////////
 
 // Polyfill for string.includes. See https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String/includes
-;String.prototype.includes||(String.prototype.includes=function(t,e){"use strict";return"number"!=typeof e&&(e=0),e+t.length>this.length?!1:-1!==this.indexOf(t,e)});
+String.prototype.includes||(String.prototype.includes=function(t,e){"use strict";return"number"!=typeof e&&(e=0),e+t.length>this.length?!1:-1!==this.indexOf(t,e)});
+
 
