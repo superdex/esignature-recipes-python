@@ -12,16 +12,19 @@
                     to create and update your Integration Keys (Client IDs). Use the Integrations/API and Keys section of the tool.</p>
                 <!-- Nav tabs -->
                 <ul class="nav nav-tabs" role="tablist">
-                    <li role="presentation" class="active"><a href="#oauth-code" aria-controls="oauth-code" role="tab" data-toggle="tab">OAuth Authorization Code Grant</a></li>
-                    <li role="presentation"><a href="#oauth-pw" aria-controls="oauth-pw" role="tab" data-toggle="tab">Legacy OAuth Token</a></li>
-                    <li role="presentation"><a href="#ds-legacy" aria-controls="ds-legacy" role="tab" data-toggle="tab">Legacy Header Authentication</a></li>
+                    <li role="presentation" class="active"><a href="#oauth-code" aria-controls="oauth-code" role="tab" data-toggle="tab">
+                        User Applications Authentication</a></li>
+                    <li role="presentation"><a href="#ds-legacy" aria-controls="ds-legacy" role="tab" data-toggle="tab">
+                        Service Integrations Authentication</a></li>
                 </ul>
 
                 <!-- Tab panes -->
-                <div class="tab-content">
+                <div class="nav-tabs-container">
+                    <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="oauth-code">
                         <h3>OAuth Authorization Code Grant</h3>
-                        <p>Used for server-based user applications that can secure your Client ID’s Secret Key.</p>
+                        <p>Used for server-based user applications that can secure your Client ID’s Secret Key.
+                            <a href="https://docs.docusign.com/esign/guide/authentication/oa2_auth_code.html" target="_blank">Docs.</a></p>
                         <p>To use this authorization flow, first use the DocuSign Admin tool to add the redirect URI (shown below) to the client id.</p>
                         <div class="panel panel-default">
                             <div class="panel-heading">
@@ -63,53 +66,10 @@
                             </div>
                         </div>
                     </div>
-                    <div role="tabpanel" class="tab-pane" id="oauth-pw">
-                        <h3>Legacy OAuth Token</h3>
-                        <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.
-                            Recommended over Legacy Header Authentication since the authenticated user’s password is not needed after the token is obtained.
-                        </p>
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Settings</h3>
-                            </div>
-                            <div class="panel-body">
-                                <form>
-                                    <div class="row">
-                                        <div class="form-group col-md-4">
-                                            <label for="pw_email">Email address</label>
-                                            <input type="email" class="form-control" id="pw_email" name="pw_email" placeholder="Email">
-                                            <small class="text-muted">Email address for your “Service Account.”</small>
-                                        </div>
-
-                                        <div class="form-group col-md-4">
-                                            <label for="pw_pw">Password</label>
-                                            <input type="password" class="form-control" id="pw_pw" name="pw_pw" placeholder="Password">
-                                            <small class="text-muted">Password for your “Service Account.”</small>
-                                        </div>
-
-                                        <div class="form-group col-md-4">
-                                            <label for="pw_client_id">Integration key</label>
-                                            <input type="text" class="form-control" id="pw_client_id" name="pw_client_id" placeholder="Integration key">
-                                            <small class="text-muted">Integration key.</small>
-                                        </div>
-                                        <input type="hidden" name="type" value="legacy_oauth" />
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <button type="button" class="btn btn-primary" data-endpoint="auth" data-response="auth" data-feedback="feedback-pw">Submit and Authenticate</button>
-                                        </div>
-                                        <div class="col-md-12 feedback" id="feedback-pw">
-                                            <h3>Working...&nbsp;&nbsp;&nbsp;<span></span></h3>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     <div role="tabpanel" class="tab-pane" id="ds-legacy">
                         <h3>Legacy Header Authentication</h3>
                         <p>Used for “Service integrations” that are not directed by an individual. Eg, an integration which autonomously sends out signing requests.
-                        Not recommended: use Legacy OAuth Token instead.</p>
+                        <a href="https://docs.docusign.com/esign/guide/authentication/legacy_auth.html" target="_blank">Docs.</a></p>
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Server Settings</h3>
@@ -148,6 +108,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </section>

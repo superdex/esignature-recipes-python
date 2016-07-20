@@ -4,11 +4,14 @@
   
 	// Private global variabls for the functions
 	var toc_items = [], // array of the notification items that are being displayed
-		ace_editor = false,
+		ace_editors = {request: false, response: false},
         ace_cdn = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/", // Where ACE loads optional JS from
         omit_base64 = true,
-        omit_base64_text = "[Base64 data omitted]";
-    
+        omit_base64_text = "[Base64 data omitted]",
+        item_intro_template,
+        request_tab_template,
+        response_tab_template;
+            
     // FORMAT OF THE TOC ENTRIES
     // toc_entries is an array. The element [0] is the oldest, shown at the bottom of the page.
     // Each entry is {
@@ -226,18 +229,20 @@
 		// This is a jQuery event handler. See http://api.jquery.com/Types/#Event
 		// It fills in the main column
 		var item = event.data, // our object about the log entry
-			item_info_el = $("#item_info");
+			item_info_el = $("#item-feedback");
 	
-		$(item_info_el).html("<h2>Working...</h2>");
+		$(item_info_el).html("<h2>Working...</h2>").show();
 		$.ajax({url: item.url, type: 'get'})
 		.fail(function(jqXHR, textStatus, errorThrown) {
 		    $(item_info_el).html(
                 "<h3>Problem: Couldn’t fetch the file</h3><p>URL: " + item.url + "</p><p>Status: " + textStatus + "</p>");
 		})
-		.done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item)})
+		.done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item); $(item_info_el).hide()})
 	}
 
     var do_show_item = function(data, textStatus, jqXHR, item) {
+        
+        var parsed;
         // Parse the item into parsed: {
         //   raw
         //   request: {
@@ -249,21 +254,32 @@
         //      content_type
         //      content_type_json: boolean // is the request content-type JSON?
         //      content_type_multipart: boolean
-        //      json_ok: boolean // Does the JSON parse?
+        //      json_problem: false or an error message // Does the JSON parse?
         //      body
+        //      show_editor
         //      json // the request, parsed into a json object (iff json_ok)
         //   response: {
         //      success:  // boolean, a successful request?
+        //      success_class = success ? "success-circle" : "failure-circle"
         //      status:   // eg "201 Created"
         //      headers
         //      content_type
         //      content_type_json: boolean // is the response content-type JSON?
         //      content_type_multipart: boolean
-        //      json_ok: boolean // Does the JSON parse?
+        //      json_problem: false or an error message // Does the JSON parse?
         //      body
+        //      show_editor
         //      json // the response, parsed into a json object (iff json_ok)
-
-        var raw = data,
+        
+        function parse_it(){
+            var raw = data,
+                re_cr_style = /\r\n\r\n/m,
+                cr_style = re_cr_style.test(raw), // Does the file use \r\n as line endings?
+                eol = cr_style ? "\r\n" : "\n",
+                eol_size = eol.length,
+                end_of_line1 = raw.indexOf(eol),
+                line1 = raw.substring(0, end_of_line1).replace("\r\n", "\n");
+                    
             parsed = {
                 raw: data,
                 request:{
@@ -272,79 +288,110 @@
                     date_time: item.date_time
                 },
                 response: {
-                    success: item.success
-            }},
-            re_cr_style = /\r\n\r\n/m,
-            cr_style = re_cr_style.test(raw), // Does the file use \r\n as line endings?
-            eol = cr_style ? "\r\n" : "\n",
-            eol_size = eol.length,
-            end_of_line1 = raw.indexOf(eol),
-            line1 = raw.substring(0, end_of_line1).replace("\r\n", "\n");
+                    success: item.success,
+                    success_class: item.success ? "success-circle" : "failure-circle"
+            }};
+            
+            parsed.request.url = line1.split(" ")[1];
+            raw = raw.substring(end_of_line1 + eol_size); // remove first line
+            var end_of_headers = raw.indexOf(eol + eol);
+            parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+            raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
 
+            // Find the request Content-Type. Eg Content-Type: application/pdf
+            // NB, the request may not have a content type!
+            var ct = content_type(parsed.request.headers);
+            parsed.request.content_type = ct;
+            parsed.request.content_type_json = ct && ct === "application/json";
+            parsed.request.content_type_multipart = ct && ct.includes("multipart");
 
-        parsed.request.url = line1.split(" ")[1];
-        raw = raw.substring(end_of_line1 + eol_size); // remove first line
-        var end_of_headers = raw.indexOf(eol + eol);
-        parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
-        raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
+            var re_status = /^\d{3} [A-Z][A-Za-z]{1,}$/m,
+                end_of_req_body_index = raw.search(re_status);
 
-        // Find the request Content-Type. Eg Content-Type: application/pdf
-        // NB, the request may not have a content type!
-        var ct = content_type(parsed.request.headers);
-        parsed.request.content_type = ct;
-        parsed.request.content_type_json = ct && ct === "application/json";
-        parsed.request.content_type_multipart = ct && ct.includes("multipart");
+            parsed.request.body = raw.substring(0, end_of_req_body_index);
+            if (parsed.request.body === "" || parsed.request.body === eol) {parsed.request.body = false}
+            parsed.request.show_editor = parsed.request.body !== false && !parsed.request.content_type_multipart;
+            raw = raw.substring(end_of_req_body_index); // Now raw starts with the status line
 
-        var re_status = /^\d{3} [A-Z][A-Za-z]{1,}$/m,
-            end_of_req_body_index = raw.search(re_status);
+            var cr_index = raw.indexOf(eol);
+            parsed.response.status = raw.substring(0, cr_index);
+            raw = raw.substring(cr_index + eol_size); // Now raw starts with the response headers
+            end_of_headers = raw.indexOf(eol + eol);
+            parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+            raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body
 
-        parsed.request.body = raw.substring(0, end_of_req_body_index);
-        raw = raw.substring(end_of_req_body_index); // Now raw starts with the status line
+            // Find the response content type. Eg Content-Type: application/pdf
+            ct = content_type(parsed.response.headers);
+            parsed.response.content_type = ct;
+            parsed.response.content_type_json = ct === "application/json";
+            parsed.response.content_type_multipart = ct.includes("multipart");
+            parsed.response.body = raw;
+            if (parsed.response.body === "" || parsed.response.body === eol) {parsed.response.body = false}
+            parsed.response.show_editor = parsed.response.body !== false && !parsed.response.content_type_multipart;
+            
+            raw = null;
 
-        var cr_index = raw.indexOf(eol);
-        parsed.response.status = raw.substring(0, cr_index);
-        raw = raw.substring(cr_index + eol_size); // Now raw starts with the response headers
-        end_of_headers = raw.indexOf(eol + eol);
-        parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
-        raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body
+            // fill in json bodies with parse error check
+            ["request", "response"].forEach(function(i){
+                if (parsed[i].content_type_json){
+                    parsed[i].json_problem = false;
+                    try {
+                        parsed[i].json = JSON.parse(parsed[i].body)
+                    } catch (e) {
+                        parsed[i].json_problem = "JSON parsing problem: " + e.message + ". Line " + e.lineNumber + ". column " + e.columnNumber;
+                    }
+                }
+            })
+        }
 
-        // Find the response content type. Eg Content-Type: application/pdf
-        ct = content_type(parsed.response.headers);
-        parsed.response.content_type = ct;
-        parsed.response.content_type_json = ct === "application/json";
-        parsed.response.content_type_multipart = ct.includes("multipart");
-        parsed.response.body = raw;
-        raw = null;
+        // THE MAIN STEM
+        $("#item-wrapper").hide();
+        parse_it();
+        $("#item-intro").html(item_intro_template(parsed));
+        $("#request-tab").html(request_tab_template(parsed));
+        $("#response-tab").html(response_tab_template(parsed));
+        $("#raw-tab").html(parsed.raw);
+        
+        // Add content to the editor windows as appropriate
+        // Editors will be in 
+        //   <div id="request-body-editor" class="log_editor"></div>                                
+        //   <div id="response-body-editor" class="log_editor"></div>                                
+        create_editors();
+        ["request", "response"].forEach(function(i){
+            if (parsed[i].show_editor) {            
+                $("#" + i + "-body-editor").show();   
+                var value = parsed[i].body;
+                if (parsed[i].content_type_json && parsed[i].json_problem === false) {
+                    value = JSON.stringify(parsed[i].json, null, 4);
+                }
+                ace_editors[i].setValue(value);
+                ace_editors[i].getSelection().clearSelection();
+                ace_editors[i].getSelection().moveCursorToScreen(0,0,true);
+            } else {
+                $("#" + i + "-body-editor").hide();
+            }
+        })
+        $("#item-wrapper").show();
+	}
 
-        // tbd: fill in json bodies with parse error check
+    function create_editors(){
+        if (ace_editors.request) {return}
+        ace.config.set("workerPath", ace_cdn);
 
-
-        // Done parsing!
-        var rendered = Mustache.render($('#item_template').html(), parsed);
-        $("#item_info").html(rendered);
-
-
-        return;
-
-
-        if (! ace_editor) {
-            ace.config.set("workerPath", ace_cdn);
-            ace_editor = ace.edit("editor");
-            ace_editor.setReadOnly(true);
-            ace_editor.setTheme("ace/theme/chrome");
-            ace_editor.setOption("wrap", "free");
-            ace_editor.$blockScrolling = Infinity;
+        ["request", "response"].forEach(function(i){
+            ace_editors[i] = ace.edit(i + "-body-editor");
+            ace_editors[i].setReadOnly(true);
+            ace_editors[i].setTheme("ace/theme/chrome");
+            ace_editors[i].setOption("wrap", "free");
+            ace_editors[i].$blockScrolling = Infinity;
             window_resized();
             var XMLMode = ace.require("ace/mode/xml").Mode,
-                ace_session = ace_editor.getSession();
+            ace_session = ace_editors[i].getSession();
             ace_session.setMode(new XMLMode());
-            ace_ession.setUseWrapMode(true);
+            ace_session.setUseWrapMode(true);
             ace_session.setFoldStyle("markbeginend");
-        }
-        ace_editor.setValue(data);
-        ace_editor.getSelection().clearSelection();
-        ace_editor.getSelection().moveCursorToScreen(0,0,true);
-	}
+        })
+    }
 
     function content_type(headers){
         // Get the content type, if present in the headers. The headers EOL is "\n"
@@ -369,13 +416,13 @@
 		
 		// resize editor div, 300 min
 		var min = 300;
-		if (ace_editor) {			
-			h = $(window).height() - $("#editor").offset().top - $(".navbar").height() - 5;
-			// The navbar is fixed so offset doesn't include it. (?)
-
-			$("#editor").height((h < min) ? min : h);
-			ace_editor.resize();
-		}
+		// if (ace_editor) {			
+		// 	h = $(window).height() - $("#editor").offset().top - $(".navbar").height() - 5;
+		// 	// The navbar is fixed so offset doesn't include it. (?)
+        // 
+		// 	$("#editor").height((h < min) ? min : h);
+		// 	ace_editor.resize();
+		// }
 	}
 
 	var countdown = function(){
@@ -447,11 +494,15 @@
         if ($(".api_logs").length == 0) {
             return;
         }
-    add_API_Logs_page_listeners();
-    logs_initial_download();
-	window_resized();
-	$(window).resize(window_resized);
-
+        add_API_Logs_page_listeners();
+        item_intro_template = Handlebars.compile($("#item-intro-template").html()); // Compile the templates once
+        request_tab_template = Handlebars.compile($("#request-tab-template").html());
+        response_tab_template = Handlebars.compile($("#response-tab-template").html());
+        
+        logs_initial_download();
+	    window_resized();
+        create_editors();
+	    $(window).resize(window_resized);
 	});
 	
 }(jQuery));

@@ -38,7 +38,7 @@ oauth_scope = "signature"
 # auth: {authenticated: true/false
 #        user_name
 #        email
-#        type: {oauth_code, legacy_oauth, ds_legacy}
+#        type: {oauth_code, ds_legacy}
 #        account_id
 #        base_url           # Used for API calls
 #        base_url_no_account # Used for account-independent API calls. Eg
@@ -61,7 +61,6 @@ def get_auth_status():
     """
     auth_status = {}
     translator = {"oauth_code": "OAuth Authorization Code Grant",
-                  "legacy_oauth": "Legacy OAuth Authentication",
                   "ds_legacy": "DocuSign Legacy Authentication"}
 
     if 'auth' in session:
@@ -83,15 +82,11 @@ def set_auth():
     """Enables the authentication to be set for the session.
 
     The Request body:
-    type: {oauth_code, legacy_oauth, ds_legacy}
+    type: {oauth_code, ds_legacy}
 
     code_client_id
     code_secret_key
     code_redirect_uri
-
-    pw_client_id # For Legacy OAuth Password authentication. We start with the same as for DS Legacy
-    pw_email
-    pw_pw
 
     legacy_client_id: # same as integration_key. Required.
     legacy_email, # only supply if type == ds_legacy
@@ -108,10 +103,6 @@ def set_auth():
     delete_auth()
     if req["type"] == "ds_legacy":
         err = set_auth_ds_legacy(req)
-        return {"err": err, "redirect": False, "auth_status": get_auth_status()}
-
-    if req["type"] == "legacy_oauth":
-        err = set_auth_legacy_oauth(req)
         return {"err": err, "redirect": False, "auth_status": get_auth_status()}
 
     if req["type"] == "oauth_code":
@@ -145,41 +136,6 @@ def set_auth_ds_legacy(req):
         "base_url_no_account": r["base_url_no_account"],
         "auth_header_key": auth_header_key,
         "auth_header_value": auth_header_value}
-    return False
-
-def set_auth_legacy_oauth(req):
-    """Authenticate the user using legacy OAuth technique
-
-    Side-effect: Sets Session["auth"]
-    Returns err
-    """
-
-    # Normally, the client_id (Integration_key) is a constant for the app.
-    email = req["pw_email"]
-    pw = req["pw_pw"]
-    client_id = req["pw_client_id"]
-    auth_header_key = 'X-DocuSign-Authentication'
-    auth_header_dict = {"Username": email, "Password": pw, "IntegratorKey": client_id}
-    auth_header_value = json.dumps(auth_header_dict)
-
-    r = authentication_legacy_oauth_login(auth_header_key, auth_header_value) # r is {err, account_id, base_url, base_url_no_account}
-    if r["err"]:
-        return r["err"]
-
-    # Set auth with intermediate credentials (Legacy Authentication)
-    auth = {"authenticated": True,
-            "user_name": r["user_name"],
-            "email": r["email"],
-            "type": req["type"],
-            "account_id": r["account_id"],
-            "account_name": r["account_name"],
-            "base_url": r["base_url"],
-            "base_url_no_account": r["base_url_no_account"],
-            "auth_header_key": r["auth_header_key"],
-            "auth_header_value": r["auth_header_value"]}
-
-    # Set Session["auth"]
-    session["auth"] = auth
     return False
 
 def set_auth_oauth_code(req):
@@ -293,88 +249,6 @@ def authentication_login(auth_header_key, auth_header_value):
 
     return {'err': err, 'account_id': account_id, 'base_url': base_url, 'base_url_no_account': base_url_no_account,
             "user_name": user_name, "email": email, "account_name": account_name}
-
-def authentication_legacy_oauth_login(auth_header_key, auth_header_value):
-    """Obtains a legacy OAuth token by calling Authentication: login method with api_password true
-
-    This authentication technique is currently the best choice for "Service Intergrations"
-
-    This function is the same as the authentication_login except that
-    query parameter api_password is used, and the response includes an OAuth token
-
-    Returns {err, account_id, base_url, user_name, email, auth_header_key, auth_header_value}
-    """
-    ds_headers = {'Accept': 'application/json'}
-    ds_headers[auth_header_key] = auth_header_value
-    err = False
-
-    try:
-        r = requests.get(ds_legacy_login_url + "?api_password=true", headers=ds_headers)
-    except requests.exceptions.RequestException as e:
-        err = "Error calling DocuSign login: " + str(e)
-        return {'err': err}
-
-    status = r.status_code
-    if (status != 200):
-        return ({'err': "Error calling DocuSign login, status is: " + r.content + " (" + str(status) + ")"})
-
-    # get the baseUrl and accountId from the response body
-    response = r.json()
-    # Example response:
-    # { "apiPassword": "{PASSWORD}",
-    #   "loginAccounts": [
-    #       { "name": "DocuSign",   # account_name
-    #         "accountId": "1374267",
-    #         "baseUrl": "https://demo.docusign.net/restapi/v2/accounts/1374267",
-    #         "isDefault": "true",
-    #         "userName": "Recipe Login",
-    #         "userId": "d43a4a6a-dbe7-491e-9bad-8f7b4cb7b1b5",
-    #         "email": "temp2+recipe@kluger.com",
-    #         "siteDescription": ""
-    #      }
-    # ]}
-    #
-
-    account_id = None
-    found = False
-    user_name = None
-    email = None
-    # Get account_id and base_url.
-    if (ds_account_id == None):
-        # Get default
-        for account in response["loginAccounts"]:
-            if (account["isDefault"] == "true"):
-                account_id = account["accountId"]
-                account_name = account["name"]
-                base_url = account["baseUrl"]
-                base_url_no_account = rm_url_parts(base_url, 2)
-                user_name = account["userName"]
-                email = account["email"]
-                found = True
-                break
-
-        if (not found):
-            err = "Could not find default account for the username."
-    else:
-        # get the account's base_url
-        for account in response["loginAccounts"]:
-            if (account["accountId"] == ds_account_id):
-                base_url = account["baseUrl"]
-                base_url_no_account = rm_url_parts(base_url, 2)
-                user_name = account["userName"]
-                email = account["email"]
-                account_id = ds_account_id
-                account_name = account["name"]
-                found = True
-                break
-        if (not found):
-            err = "Could not find baseUrl for account " + ds_account_id
-
-    auth_header_key = "Authorization"
-    auth_header_value = "Bearer " + response["apiPassword"]
-    return {'err': err, 'account_id': account_id, 'base_url': base_url, 'base_url_no_account': base_url_no_account,
-            "user_name": user_name, "email": email, "account_name": account_name,
-            "auth_header_key": auth_header_key, "auth_header_value": auth_header_value}
 
 def auth_token_delete():
     """Deletes the authentication token on DocuSign
