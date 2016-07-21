@@ -374,6 +374,10 @@
         $("#request-tab").html(request_tab_template(parsed));
         $("#response-tab").html(response_tab_template(parsed));
         $("#raw-tab").html(parsed.raw);
+        $("#raw_download").html("<a download='" + parsed.request.method_name + 
+        ".txt' type='application/octet-stream'>Download the raw log entry</a>");
+        var d = new Blob([parsed.raw]);
+        $("#raw_download a").attr("href", URL.createObjectURL(d));
         
         // Add content to the editor windows as appropriate
         // Editors will be in 

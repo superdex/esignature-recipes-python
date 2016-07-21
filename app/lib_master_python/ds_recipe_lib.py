@@ -65,6 +65,8 @@ def get_base_url(remove=1):
     for x in range(0, remove):
         del parts[-1]
     url = '/'.join(map(str, parts))
+    if url.endswith('/'):
+        url = url[:-1]
     return url
 
 def get_script_url():
