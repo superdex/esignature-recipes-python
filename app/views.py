@@ -39,7 +39,7 @@ def auth_redirect():
     # page, with a "Continue" link to the home page
     if err:
         flash(err)
-    return redirect(url_for("/"))
+    return redirect("/")
 
 ################################################################################
 ################################################################################
