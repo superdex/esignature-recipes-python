@@ -91,15 +91,17 @@
 		if (! auth.authenticated) {
 			text.push("<p>Not authenticated.</p>");
 		} else {
-			text.push("<p>Authenticated: yes.</p>");
+			var oauth = auth.type == "oauth_code";
+            text.push("<p>Authenticated: yes.</p>");
 			text.push("<p>Type: " + auth.type + ".</p>");
+			if (oauth) {text.push("<p>" + data.token_expiration + ".</p>")};
 			text.push("<p>Name: " + auth.user_name + ".</p>");
 			text.push("<p>Email: " + auth.email + ".</p>");
 			text.push("<p>Account id: " + auth.account_id + ".</p>");
 			text.push("<p>Auth header key: " + auth.auth_header_key + ".</p>");
 			text.push("<p>Auth header value: <span style='font-size: xx-small;'>" + auth.auth_header_value + ".</span></p>");
 			text.push("<p>Base URL: " + auth.base_url  + ".</p>");
-			if (auth.type == "oauth_code") {
+			if (oauth) {
 				text.push("<p>OAuth Refresh Token: <span style='font-size: xx-small;'>" + auth.refresh_token + ".</span></p>");
 			}
 		}
@@ -120,8 +122,6 @@
 			.done(function(data, textStatus, jqXHR) {
                 if (always_show || data.status === 'ask') {
                     show_webhook_status(data);
-                } else {
-                    $(recipe_index).show();
                 }
 			})
 			.fail(function(jqXHR, textStatus, errorThrown) {
@@ -276,7 +276,6 @@
                 }
                 // No data.err therefore success!
                 $("#options-form").hide();
-                $(recipe_index).show();
             }
         }
 

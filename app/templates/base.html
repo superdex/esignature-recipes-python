@@ -39,9 +39,9 @@
         </div>
         <div class="navbar">
             <a class="navbar-brand" href="{{base_url}}">DocuSign Recipes&mdash;Python</a>
-            <ul class="nav navbar-nav navbar-right" id="options">
-                <li><a href="logging_page" target='_blank'>API Logs</a></li>
-                <li><a href="#">Options</a></li>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="{{base_url}}/logging_page" target='_blank'>API Logs</a></li>
+                <li id="options"><a href="#">Options</a></li>
             </ul>
         </div>
       </div>
@@ -61,7 +61,7 @@
 <script src="{{ url_for('static', filename='assets_master/handlebars.min.js') }}"></script>
 
 <!-- NOTE: If you update the Ace version or location, also update the "ace_cdn" variable in recipes.js!!! -->
-<script src="https://cdn.jsdelivr.net/g/ace@1.2.3(noconflict/ace.js+noconflict/mode-xml.js+noconflict/theme-chrome.js)"></script>
+<script src="https://cdn.jsdelivr.net/g/ace@1.2.3(noconflict/ace.js+noconflict/mode-xml.js+noconflict/mode-json.js+noconflict/theme-chrome.js)"></script>
 
 <!-- JS for the recipes -->
 <script src="{{ url_for('static', filename='assets_master/recipes.js') }}"></script>

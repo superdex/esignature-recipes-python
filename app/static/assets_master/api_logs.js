@@ -6,8 +6,8 @@
 	var toc_items = [], // array of the notification items that are being displayed
 		ace_editors = {request: false, response: false},
         ace_cdn = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/", // Where ACE loads optional JS from
-        omit_base64 = true,
         omit_base64_text = "[Base64 data omitted]",
+        omit_image_text  = "[Image data omitted]",
         item_intro_template,
         request_tab_template,
         response_tab_template;
@@ -60,8 +60,11 @@
             contentType: "application/json; charset=utf-8", dataType: "json"
         })
             .done(function (data, textStatus, jqXHR) {
-                if (data.err) {
-                    $(logging_status).html("<b>Problem:</b> " + data.err);
+                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "AUTHENTICATE") {
+                    $(logging_status).html("<b>Problem:</b> " + data.err + 
+                    " <a class='btn btn-primary' role='button' href='..'>Authenticate</a>");
+                } else if (data.err) {
+                        $(logging_status).html("<b>Problem:</b> " + data.err);
                 } else {
                     $(logging_status).html(data.status);
                 }
@@ -92,7 +95,12 @@
             .done(function(data, textStatus, jqXHR) {
                 if (data.err) {
                     stop_feedback();
-                    $(feedback_el).html("<b>Problem:</b> " + data.err);
+                    if (data.hasOwnProperty('err_code') && data.err_code === 404) {
+                        $(feedback_el).html("No logging entries to download.");
+                        window.setTimeout(function(){$(feedback_el).html("")}, 8000);
+                    } else {
+                        $(feedback_el).html("<b>Problem:</b> " + data.err);
+                    }
                 } else {
                     stop_feedback();
                     $(feedback_el).html("<b>Processing...</b>");
@@ -102,7 +110,9 @@
             .fail(function(jqXHR, textStatus, errorThrown) {
                 stop_feedback();
                 $(feedback_el).html("<b>Problem:</b> " + textStatus);
-            });
+            })
+            .always(function(){window.setTimeout(logging_status, 0)
+            })
     }
     
     function logs_initial_download(){
@@ -110,13 +120,8 @@
         // (not DocuSign platform)
         var feedback = "working",
             feedback_el = $("#" + feedback),
-            counter_el = $(feedback_el).next()[0],
-            countdown_i,
-            countdown = function(){countdown_i -= 1; $(counter_el).text(countdown_i)},
-            countdown_id,
-            stop_feedback = function(){$(feedback_el).html("");clearInterval(countdown_id); $(counter_el).text("");};
-        $(feedback_el).text("Working... ");
-        countdown_i = 100; countdown_id = setInterval(countdown, 300);
+        stop_feedback = function(){$(feedback_el).html("")};
+        $(feedback_el).text("Fetching... ");
         $.ajax({
             url: "logs_list" + "?" + Date.now(), type: "GET",
             contentType: "application/json; charset=utf-8", dataType: "json"})
@@ -125,9 +130,8 @@
                     stop_feedback();
                     $(feedback_el).html("<b>Problem:</b> " + data.err);
                 } else {
-                    stop_feedback();
-                    $(feedback_el).html("<b>Processing...</b>");
-                    process_new_items(data, stop_feedback, false);
+                    $(feedback_el).html("Processing...");
+                    window.setTimeout(process_new_items, 0, data, stop_feedback, false);
                 }
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
@@ -147,7 +151,10 @@
         //
         // 
         data = data.entries;
-		if (data.length == 0) {return;} // nothing to do...
+		if (data.length == 0) {
+            stop_feedback(); // nothing to do...
+            return;
+        } 
 
 		// Sort the incoming events so the newest (_00) is first.
 		data.sort(function (a, b) {
@@ -242,7 +249,7 @@
 
     var do_show_item = function(data, textStatus, jqXHR, item) {
         
-        var parsed;
+        var parsed, omit_base64;
         // Parse the item into parsed: {
         //   raw
         //   request: {
@@ -292,6 +299,17 @@
                     success_class: item.success ? "success-circle" : "failure-circle"
             }};
             
+            // First, treat the incoming data as one long string and change any
+            // "documentBase64": "JVB blah blah" to 
+            // "documentBase64": "[Base64 data omitted]" 
+            if (omit_base64) {
+                var re_omit64 = /"documentBase64":\s*"([^"]*)"/g;
+                raw = raw.replace(re_omit64, '"documentBase64":"' + omit_base64_text +'"');
+                
+                var re_omit_images = /"imageBytes":\s*"([^"]*)"/g;
+                raw = raw.replace(re_omit_images, '"imageBytes":"' + omit_image_text +'"');
+            }
+            
             parsed.request.url = line1.split(" ")[1];
             raw = raw.substring(end_of_line1 + eol_size); // remove first line
             var end_of_headers = raw.indexOf(eol + eol);
@@ -323,6 +341,10 @@
             // Find the response content type. Eg Content-Type: application/pdf
             ct = content_type(parsed.response.headers);
             parsed.response.content_type = ct;
+            if (!ct) {
+                // Very strange that the *response* doesn't have a content type. Assume it's json
+                ct = "application/json"
+            }
             parsed.response.content_type_json = ct === "application/json";
             parsed.response.content_type_multipart = ct.includes("multipart");
             parsed.response.body = raw;
@@ -338,7 +360,7 @@
                     try {
                         parsed[i].json = JSON.parse(parsed[i].body)
                     } catch (e) {
-                        parsed[i].json_problem = "JSON parsing problem: " + e.message + ". Line " + e.lineNumber + ". column " + e.columnNumber;
+                        parsed[i].json_problem = "JSON parsing problem: " + e.message;
                     }
                 }
             })
@@ -346,6 +368,7 @@
 
         // THE MAIN STEM
         $("#item-wrapper").hide();
+        omit_base64 = $("#omit-content").is(':checked');
         parse_it();
         $("#item-intro").html(item_intro_template(parsed));
         $("#request-tab").html(request_tab_template(parsed));
@@ -386,8 +409,12 @@
             ace_editors[i].$blockScrolling = Infinity;
             window_resized();
             var XMLMode = ace.require("ace/mode/xml").Mode,
+                JSONMode = ace.require("ace/mode/json").Mode,
             ace_session = ace_editors[i].getSession();
-            ace_session.setMode(new XMLMode());
+            // ace_session.setMode(new XMLMode());
+            ace_session.setMode(new JSONMode());
+
+            // ace_session.setMode("ace/mode/json");
             ace_session.setUseWrapMode(true);
             ace_session.setFoldStyle("markbeginend");
         })
@@ -424,6 +451,18 @@
 		// 	ace_editor.resize();
 		// }
 	}
+    
+    function set_tab_visible_handlers(){
+        // Whenever a tab that has an editor in it becomes visible, we
+        // need to call resize on the editor or its current data is not shown(!)
+        
+        $('a[data-refresh]').on('shown.bs.tab', function (e) {
+            // e.target // newly activated tab
+            // data-refresh=request
+            var i = $(e.target).attr("data-refresh");
+            ace_editors[i].resize();
+        })
+    }
 
 	var countdown = function(){
 		// Update the countdown value
@@ -502,6 +541,7 @@
         logs_initial_download();
 	    window_resized();
         create_editors();
+        set_tab_visible_handlers();
 	    $(window).resize(window_resized);
 	});
 	

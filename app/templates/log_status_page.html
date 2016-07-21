@@ -3,18 +3,20 @@
 
 {% block content %}
     <div class="api_logs" xmlns="http://www.w3.org/1999/html"></div>
-    <h1>API Logs</h1>
-    <p><form><p>When logging is activated, the DocuSign platform stores up to 50 log entries at a time. Download the log entries to enable more logging.
+    <h2>API Logs</h2>
+    <form><p>When logging is activated, the DocuSign platform stores up to 50 log entries at a time. Download the log entries to enable more logging.
     The platform logs all API calls for your account, including those from other clients. 
-    <input type="checkbox" id="omit-content" class="inline-checkbox" checked>Omit base64 document content</input>
-    </form></p>
+    <input type="checkbox" id="omit-content" class="inline-checkbox" checked>Omit base64 and image bytes content</input>
+    </p></form>
+    
+    <form action="delete_logs" method="post">
     <p id="status">Platform logging status: <span id="logging-status">tbd</span><span></span></span><a href="#" id="logging-status-refresh" class="marginleft">Refesh</a>
         <button type="button" class="btn btn-primary marginleft" id="logging-download" data-feedback="feedback-download">Download Latest Logs</button>
         <span id="feedback-download"></span><span></span>
-    </p>
-    <p></p>
+        <input type="submit" class="btn btn-danger marginleft" value="Delete logs!" />
+    </p></form>
 
-    <div class="row fill">
+    <div class="row fill" class="margintop">
     	<div class="wrapper">
       	  <div id="status_left" class="col-md-3">
     		  <p><span id="working">Working...</span><span></span></p>
@@ -28,8 +30,8 @@
                   <div class="panel with-nav-tabs panel-primary">
                       <div class="panel-heading">
                           <ul class="nav nav-tabs">
-                              <li class="active"><a href="#tab1primary" data-toggle="tab">Request</a></li>
-                              <li><a href="#tab2primary" data-toggle="tab">Response</a></li>
+                              <li class="active"><a href="#tab1primary" data-toggle="tab" data-refresh="request">Request</a></li>
+                              <li><a href="#tab2primary" data-toggle="tab" data-refresh="response">Response</a></li>
                               <li><a href="#tab3primary" data-toggle="tab">Raw</a></li>
                           </ul>
                       </div>
@@ -115,7 +117,7 @@
     <script id="item-intro-template" type="text/x-handlebars-template">        
         <h4><span class="{{response.success_class}} sm-circle"></span><span>{{response.status}}.</span> 
             <i>Method: {{request.method_name}}</i></h4>
-        <p>URL: {{request.url}}</p>
+        <p>URL: <b>{{request.method}}</b> {{request.url}}</p>
     </script>
     
     <script id="request-tab-template" type="text/x-handlebars-template">        

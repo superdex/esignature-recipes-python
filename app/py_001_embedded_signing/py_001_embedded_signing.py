@@ -291,7 +291,7 @@ def return_url():
 
     if status != "signing_complete":
         html = ("<h2>Envelope was not signed!</h2>" +
-                "<p>Envelope ID: " + embedding_info["envelope_id"] + "</p>" +
+                "<p>Envelope ID: " + embedding_info["envelopeId"] + "</p>" +
                 "<p>Signing ceremony outcome: " + translate_event[status] + " [{}]".format(status) + "</p>")
         return {
             "err": err,

@@ -3,7 +3,7 @@
 # Set encoding to utf8. See http:#stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
-import json, certifi, requests, os, base64, math, string, urllib, random, time, re, hashlib, base64
+import json, certifi, requests, os, base64, math, string, urllib, random, time, datetime, re, hashlib, base64
 from flask import request, session
 # See http:#requests.readthedocs.org/ for information on the requests library
 # See https:#urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
@@ -44,10 +44,11 @@ oauth_scope = "signature"
 #        base_url_no_account # Used for account-independent API calls. Eg
 #        auth_header_key    # Used for API calls
 #        auth_header_value  # Used for API calls
-#        client_id (integration_key)  # temp storage during authentication
-#        client_secret # temp storage during authentication
+#        client_id (integration_key)
+#        client_secret
 #        oauth_state # temp storage during authentication
 #        refresh_token # OAuth code grant only
+#        expires # timestamp when OAuth token expires
 
 def get_auth_status():
     """Returns the authentication status of the current session
@@ -71,8 +72,13 @@ def get_auth_status():
     auth_status['authenticated'] = auth['authenticated']
     auth_status['auth'] = auth
     if auth['authenticated']:
-        auth_status['description'] = 'Authenticated via {} as {} &lt;{}&gt; for the {} account ({})'.format(
+        auth_status['description'] = 'Authenticated via {} as {} &lt;{}&gt; for the {} account ({}).'.format(
             translator[auth['type']], auth['user_name'], auth['email'], auth['account_name'], auth['account_id'])
+        if auth['type'] == 'oauth_code':
+            auth_status['token_expiration'] = ("The OAuth token expires in " + 
+                str(datetime.timedelta(seconds= auth["expires"] - int(time.time()))))
+            auth_status['description'] += " </br>" + auth_status['token_expiration']
+        
     else:
         auth_status['description'] = "You are not authenticated. Please choose an authentication method and submit the information:"
 
@@ -166,7 +172,8 @@ def set_auth_oauth_code(req):
                        "type": req["type"],
                        "client_id": client_id,
                        "secret_key": secret_key,
-                       "oauth_state": oauth_state}
+                       "oauth_state": oauth_state,
+                       "redirect_uri": redirect_uri}
 
     redirect = (oauth_start +
         "?response_type=code" +
@@ -362,12 +369,7 @@ def oauth_token_for_code(auth, code):
     auth['token_type'] = token_info["token_type"]
     auth["auth_header_key"] = "Authorization"
     auth["auth_header_value"] = auth['token_type'] + " " + auth['access_token']
-
-    # We no longer need the client ID or secret for this user's session
-    # Normally, these values are associated with the app, not with an
-    # individual session
-    auth["client_id"] = False
-    auth["secret_key"] = False
+    auth["expires"] = int(time.time()) + token_info["expires_in"]
 
     # Save info
     session["auth"] = auth

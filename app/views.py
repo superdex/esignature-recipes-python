@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, jsonify
+from flask import render_template, flash, redirect, jsonify, url_for
 from app import app
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
@@ -39,14 +39,7 @@ def auth_redirect():
     # page, with a "Continue" link to the home page
     if err:
         flash(err)
-    return redirect("/")
-
-@app.route('/auth_token', methods=['DELETE'])
-def auth_token_delete():
-    r = ds_authentication.auth_token_delete()
-    # r[err] is False or an error message
-    # Deletes the authentication token on DocuSign
-    return jsonify(r)
+    return redirect(url_for("/"))
 
 ################################################################################
 ################################################################################
@@ -95,6 +88,12 @@ def get_logging_status():
 def logs_list():
     return jsonify(ds_api_logging.logs_list())
 
+@app.route('/delete_logs', methods=['POST'])
+def delete_logs():
+    r = ds_api_logging.delete_logs()
+    if r["err"]:
+        flash(r["err"])
+    return redirect(url_for("logging_page"))
 
 ################################################################################
 ################################################################################
