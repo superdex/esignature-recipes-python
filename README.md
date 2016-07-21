@@ -13,8 +13,12 @@ DocuSign Signature REST API recipes:
 * Using a webhook to receive status changes. See app/lib_master_python/ds_webhook.py
 * Authenticating with the Signature REST API. See app/lib_master_python/ds_authentication.py
 
+## API Logging Feature
+The application also enables you to easily view your account’s API logs. It shows all API requests to your
+demo account, from this application, and from others including the DocuSign web tool.
+
 ## Try it on Heroku
-Use the deploy button to immediatelty try this app on Heroku. You can use Heroku’s free service tier, no credit card is needed.
+Use the deploy button to immediately try this app on Heroku. You can use Heroku’s free service tier, no credit card is needed.
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
