@@ -101,7 +101,12 @@ def url_origin(s, use_forwarded_host = False):
     # The protocol can easily be wrong if we're frontended by a HTTPS proxy
     # (Like the standard Heroku setup!)
     on_heroku = heroku_env in os.environ
-    if on_heroku: # Special handling for Heroku
+    upgrade_insecure_request = request.headers.get('Upgrade-Insecure-Requests')
+    upgrade_insecure_request = upgrade_insecure_request and upgrade_insecure_request == 1
+    https_proto = request.headers.get('X-Forwarded-Proto')
+    https_proto = https_proto and https_proto == 'https'
+    use_https = on_heroku or upgrade_insecure_request or https_proto
+    if use_https: # Special handling
         protocol = "https"
     return protocol + '://' + host
         

@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, jsonify
+from flask import render_template, flash, redirect, jsonify, request
 from app import app
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
@@ -39,6 +39,7 @@ def auth_redirect():
     # page, with a "Continue" link to the home page
     if err:
         flash(err)
+    flash("Debug info: " + str(request.headers))
     return redirect(ds_recipe_lib.get_base_url(1))
 
 ################################################################################
