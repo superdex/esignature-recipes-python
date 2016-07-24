@@ -79,7 +79,7 @@ def get_script_url():
     return my_url
 
 # See http://stackoverflow.com/a/8891890/64904
-def url_origin(s, use_forwarded_host = False):
+def url_origin(s, use_forwarded_host = False, include_protocol = False):
     ssl      = (('HTTPS' in s) and s['HTTPS'] == 'on')
     sp       = s['SERVER_PROTOCOL'].lower()
     protocol = sp[:sp.find('/')] + ('s' if ssl else '' )
@@ -88,8 +88,13 @@ def url_origin(s, use_forwarded_host = False):
     host     = s['HTTP_X_FORWARDED_HOST'] if (use_forwarded_host and ('HTTP_X_FORWARDED_HOST' in s)) \
                  else (s['HTTP_HOST'] if ('HTTP_HOST' in s) else None)
     host     = host if (host != None) else (s['SERVER_NAME'] + port)
-    return protocol + '://' + host
-
+    # The protocol can easily be wrong if we're frontended by a HTTPS proxy
+    # (Like the standard Heroku setup!)
+    if include_protocol:
+        return protocol + '://' + host
+    else:
+        return '//' + host
+        
 def full_url(s, use_forwarded_host = False):
     return url_origin(s, use_forwarded_host) + (s['REQUEST_URI'] if ('REQUEST_URI' in s) else s['PATH_INFO'])
 
