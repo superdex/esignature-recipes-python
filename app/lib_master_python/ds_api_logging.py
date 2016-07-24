@@ -66,6 +66,10 @@ def delete_logs():
     
     Returns {err}
     """
+    
+    if not check_auth():
+        return {"err": "Please authenticate.", 'err_code': "AUTHENTICATE"}
+    
     log_path = get_log_path()
     try:
         shutil.rmtree(log_path) # Remove the dir and contents

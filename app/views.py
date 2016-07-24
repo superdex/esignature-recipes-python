@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, jsonify, url_for
+from flask import render_template, flash, redirect, jsonify
 from app import app
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
@@ -93,7 +93,7 @@ def delete_logs():
     r = ds_api_logging.delete_logs()
     if r["err"]:
         flash(r["err"])
-    return redirect(url_for("logging_page"))
+    return redirect("logging_page")
 
 ################################################################################
 ################################################################################
