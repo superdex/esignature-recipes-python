@@ -58,9 +58,9 @@ def get_temp_email_access_qrcode(address):
 ########################################################################
 ########################################################################
 
-def get_base_url(remove=1):
+def get_base_url(remove=1, use_forwarded_host = False, include_protocol = False):
     # Dynamically get the url <remove> steps before this script's url
-    script_url = get_script_url()
+    script_url = get_script_url(use_forwarded_host = False, include_protocol = False)
     parts = script_url.split("/")
     for x in range(0, remove):
         del parts[-1]
@@ -69,17 +69,25 @@ def get_base_url(remove=1):
         url = url[:-1]
     return url
 
-def get_script_url():
+def get_script_url(use_forwarded_host = False, include_protocol = False):
     # Dynamically determine the script's url
     # For production use, this is not a great idea. Instead, set it
     # explicitly. Remember that for production, webhook urls must start with
     # https!
-    my_url = rm_queryparameters(full_url(request.environ))
+    my_url = rm_queryparameters(full_url(request.environ, use_forwarded_host = False, include_protocol = False))
         # See http://flask.pocoo.org/docs/0.10/api/#flask.request
     return my_url
 
+def full_url(s, use_forwarded_host = False, include_protocol = False):
+    return url_origin(s, use_forwarded_host, include_protocol) + (s['REQUEST_URI'] if ('REQUEST_URI' in s) else s['PATH_INFO'])
+
 # See http://stackoverflow.com/a/8891890/64904
 def url_origin(s, use_forwarded_host = False, include_protocol = False):
+    
+    # testing if Heroku includes forwarding host 
+    use_forwarded_host = True
+    include_protocol = True
+    
     ssl      = (('HTTPS' in s) and s['HTTPS'] == 'on')
     sp       = s['SERVER_PROTOCOL'].lower()
     protocol = sp[:sp.find('/')] + ('s' if ssl else '' )
@@ -95,9 +103,6 @@ def url_origin(s, use_forwarded_host = False, include_protocol = False):
     else:
         return '//' + host
         
-def full_url(s, use_forwarded_host = False):
-    return url_origin(s, use_forwarded_host) + (s['REQUEST_URI'] if ('REQUEST_URI' in s) else s['PATH_INFO'])
-
 def rm_queryparameters (input):
     parts = string.split(input, "?")
     return parts[0]
