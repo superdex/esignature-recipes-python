@@ -8,6 +8,7 @@ from app.lib_master_python.json_session_interface import JSONSessionInterface
 session_path = '/tmp/python_recipe_sessions'
 
 app = Flask(__name__)
+app.config.from_pyfile('config.py')
 app.secret_key = ']V<\4/)qC?EwWnd9'
 app.register_blueprint(bp_001, url_prefix='/py_001_embedded_signing')
 app.register_blueprint(bp_002, url_prefix='/py_002_email_send_template')

@@ -257,18 +257,6 @@ def authentication_login(auth_header_key, auth_header_value):
     return {'err': err, 'account_id': account_id, 'base_url': base_url, 'base_url_no_account': base_url_no_account,
             "user_name": user_name, "email": email, "account_name": account_name}
 
-def auth_token_delete():
-    """Deletes the authentication token on DocuSign
-
-    Returns {err} -- False or an error message
-    """
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
-    return {"err": "Unable to delete tokens programmatically at this time."}
 
 ########################################################################
 ########################################################################

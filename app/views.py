@@ -39,7 +39,7 @@ def auth_redirect():
     # page, with a "Continue" link to the home page
     if err:
         flash(err)
-    flash("Debug info: " + str(request.headers))
+    # flash("Debug info: " + str(request.headers))
     return redirect(ds_recipe_lib.get_base_url(1))
 
 ################################################################################
