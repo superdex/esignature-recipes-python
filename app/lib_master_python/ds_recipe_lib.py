@@ -13,6 +13,7 @@ from flask import request
 ds_api_login_url = "https://demo.docusign.net/restapi/v2/login_information" # change for production
 ca_bundle = "app/static/assets_master/ca-bundle.crt"
 temp_email_server = "mailinator.com" # Used for throw-away email addresses
+heroku_env = 'DYNO' # Used to detect if we're on Heroku
 
 ########################################################################
 ########################################################################
