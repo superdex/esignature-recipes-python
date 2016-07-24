@@ -58,9 +58,9 @@ def get_temp_email_access_qrcode(address):
 ########################################################################
 ########################################################################
 
-def get_base_url(remove=1, use_forwarded_host = False, include_protocol = False):
+def get_base_url(remove=1):
     # Dynamically get the url <remove> steps before this script's url
-    script_url = get_script_url(use_forwarded_host = False, include_protocol = False)
+    script_url = get_script_url()
     parts = script_url.split("/")
     for x in range(0, remove):
         del parts[-1]
@@ -69,20 +69,20 @@ def get_base_url(remove=1, use_forwarded_host = False, include_protocol = False)
         url = url[:-1]
     return url
 
-def get_script_url(use_forwarded_host = False, include_protocol = False):
+def get_script_url():
     # Dynamically determine the script's url
     # For production use, this is not a great idea. Instead, set it
     # explicitly. Remember that for production, webhook urls must start with
     # https!
-    my_url = rm_queryparameters(full_url(request.environ, use_forwarded_host = False, include_protocol = False))
+    my_url = rm_queryparameters(full_url(request.environ))
         # See http://flask.pocoo.org/docs/0.10/api/#flask.request
     return my_url
 
-def full_url(s, use_forwarded_host = False, include_protocol = False):
-    return url_origin(s, use_forwarded_host, include_protocol) + (s['REQUEST_URI'] if ('REQUEST_URI' in s) else s['PATH_INFO'])
+def full_url(s):
+    return url_origin(s) + (s['REQUEST_URI'] if ('REQUEST_URI' in s) else s['PATH_INFO'])
 
 # See http://stackoverflow.com/a/8891890/64904
-def url_origin(s, use_forwarded_host = False, include_protocol = False):
+def url_origin(s, use_forwarded_host = False):
     
     # testing if Heroku includes forwarding host 
     use_forwarded_host = True
@@ -96,12 +96,13 @@ def url_origin(s, use_forwarded_host = False, include_protocol = False):
     host     = s['HTTP_X_FORWARDED_HOST'] if (use_forwarded_host and ('HTTP_X_FORWARDED_HOST' in s)) \
                  else (s['HTTP_HOST'] if ('HTTP_HOST' in s) else None)
     host     = host if (host != None) else (s['SERVER_NAME'] + port)
+    
     # The protocol can easily be wrong if we're frontended by a HTTPS proxy
     # (Like the standard Heroku setup!)
-    if include_protocol:
-        return protocol + '://' + host
-    else:
-        return '//' + host
+    on_heroku = heroku_env in os.environ
+    if on_heroku: # Special handling for Heroku
+        protocol = "https"
+    return protocol + '://' + host
         
 def rm_queryparameters (input):
     parts = string.split(input, "?")
