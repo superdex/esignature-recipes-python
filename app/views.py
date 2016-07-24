@@ -12,7 +12,7 @@ def index():
 
 @app.route('/index')
 def r_index():
-    return redirect("/")
+    return redirect(ds_recipe_lib.get_base_url(1))
 
 ################################################################################
 ################################################################################
@@ -39,7 +39,7 @@ def auth_redirect():
     # page, with a "Continue" link to the home page
     if err:
         flash(err)
-    return redirect("/")
+    return redirect(ds_recipe_lib.get_base_url(1))
 
 ################################################################################
 ################################################################################
@@ -93,7 +93,7 @@ def delete_logs():
     r = ds_api_logging.delete_logs()
     if r["err"]:
         flash(r["err"])
-    return redirect("logging_page")
+    return redirect(ds_recipe_lib.get_base_url(1) + "/logging_page")
 
 ################################################################################
 ################################################################################
