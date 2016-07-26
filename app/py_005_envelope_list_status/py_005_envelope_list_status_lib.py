@@ -18,7 +18,8 @@ trace_key = "X-ray"
 intro = ("<h2>Envelope: listStatusChanges</h2>" +
     "<p>List the envelope status changes since a date and time. Can be used to poll for status changes.</p>" +
     "<p>See <a href='https://docs.docusign.com/esign/guide/usage/status_and_events.html' target='_blank'>docs</a> " +
-    "for information on a polling strategy that won’t break the platform’s polling policy.</p>"
+    "for information on a polling strategy that won’t break the platform’s polling policy.</p>" +
+    "<p>Tip: you can refresh this page after you send an envelope with another recipe.</p>"
     )
 
 def start():
