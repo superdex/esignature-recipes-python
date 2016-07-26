@@ -5,6 +5,7 @@ from app.py_002_email_send_template.views import bp_002
 from app.py_004_email_send.views import bp_004
 from app.py_005_envelope_list_status.views import bp_005
 from app.py_006_envelope_status.views import bp_006
+from app.py_007_envelope_recipient_status.views import bp_007
 from app.lib_master_python.json_session_interface import JSONSessionInterface
 
 session_path = '/tmp/python_recipe_sessions'
@@ -17,6 +18,7 @@ app.register_blueprint(bp_002, url_prefix='/py_002_email_send_template')
 app.register_blueprint(bp_004, url_prefix='/py_004_email_send')
 app.register_blueprint(bp_005, url_prefix='/py_005_envelope_list_status')
 app.register_blueprint(bp_006, url_prefix='/py_006_envelope_status')
+app.register_blueprint(bp_007, url_prefix='/py_007_envelope_recipient_status')
 
 if os.environ.get('DYNO') is not None:  # On Heroku?
     import logging
