@@ -154,6 +154,7 @@ def send():
 
     data = r.json()
     envelope_id = data['envelopeId']
+    session['latest_envelope_id'] = envelope_id # Save for other recipe's use
 
     # Save the information that we will need for the embedded signing
     # in our "database" (for this example, we're using the session)

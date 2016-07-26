@@ -154,6 +154,7 @@ def send():
 
     data = r.json()
     envelope_id = data['envelopeId']
+    session['latest_envelope_id'] = envelope_id # Save for other recipe's use
     
     # Instructions for reading the email
     webhook_instructions = ds_webhook.webhook_instructions(envelope_id)

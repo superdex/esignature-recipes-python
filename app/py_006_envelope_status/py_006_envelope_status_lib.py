@@ -1,4 +1,4 @@
-# DocuSign API List Envelope Status Recipe 005 (PYTHON)
+# DocuSign API Envelope Status Recipe 006 (PYTHON)
 # coding=UTF-8
 
 # Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
@@ -13,17 +13,15 @@ from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_webhook
 from flask import  session
 
-trace_value = "py_005_list_envelope_status" # Used for tracing API calls
+trace_value = "py_006_envelope_status" # Used for tracing API calls
 trace_key = "X-ray"
-intro = ("<h2>Envelopes: listStatusChanges</h2>" +
-    "<p>List the envelope status changes since a date and time. Can be used to poll for status changes.</p>" +
-    "<p>See <a href='https://docs.docusign.com/esign/guide/usage/status_and_events.html' target='_blank'>docs</a> " +
-    "for information on a polling strategy that won’t break the platform’s polling policy.</p>" +
-    "<p>Tip: you can refresh this page after you send an envelope with another recipe.</p>"
+intro = ("<h2>Envelopes: get</h2>" +
+    "<p>This recipe fetches the current status for an envelope.</p>" +
+    "<p>The status for last envelope that you sent with any of this tool’s other recipes will be fetched.</p>"
     )
 
 def start():
-    """Sends Envelopes: listStatusChanges method
+    """Sends Envelopes: get method
 
     Returns r: {
         err: False, or an error message
@@ -42,36 +40,29 @@ def start():
             return {"err": "Please authenticate with DocuSign."}
     else:
         return {"err": "Please authenticate with DocuSign."}
+        
+    if not 'latest_envelope_id' in session:
+        return {"err": "Problem, no envelope ID is available. Please send an envelope with a different recipe, then retry the Envelope Status recipe."}
+    envelope_id = session['latest_envelope_id']
 
     #
     # STEP 2 - Create and send the request
     #
-    
-    # See the docs, https://docs.docusign.com/esign/restapi/Envelopes/Envelopes/listStatusChanges/
-    # We need to set one or more of the following parameters: from_date, envelopeIds and/or transactionIds.
-    # We will set from_date to be yesterday.
-    #
-    # If you're using this method to poll for changes, see "Polling for Current Status" section of 
-    # page https://docs.docusign.com/esign/guide/usage/status_and_events.html for a strategy that won't
-    # violate the platform's polling policy.
-    
-    # construct the body of the request
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-    yesterday_s = yesterday.strftime ("%Y-%m-%d") # '2016-07-25'
-        
+    # See the docs, https://docs.docusign.com/esign/restapi/Envelopes/Envelopes/get
+            
     # create the url from the baseUrl
-    url = auth["base_url"] + "/envelopes?from_date={}".format(yesterday_s)
+    url = auth["base_url"] + "/envelopes/{}".format(envelope_id)
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
                   trace_key: trace_value}
 
     try:
         r = requests.get(url, headers=ds_headers)
     except requests.exceptions.RequestException as e:
-        return {'err': "Error calling Envelopes:listStatusChanges: " + str(e)}
+        return {'err': "Error calling Envelopes:get: " + str(e)}
         
     status = r.status_code
     if (status != 200): 
-        return ({'err': "Error calling DocuSign Envelopes:listStatusChanges<br/>Status is: " +
+        return ({'err': "Error calling DocuSign Envelopes:get<br/>Status is: " +
             str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
 
     response = r.json()
@@ -86,19 +77,3 @@ def start():
 ########################################################################
 
 # FIN
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
