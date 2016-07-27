@@ -20,7 +20,7 @@ app.register_blueprint(bp_005, url_prefix='/py_005_envelope_list_status')
 app.register_blueprint(bp_006, url_prefix='/py_006_envelope_status')
 app.register_blueprint(bp_007, url_prefix='/py_007_envelope_recipient_status')
 
-if os.environ.get('DYNO') is not None:  # On Heroku?
+if 'DYNO' in os.environ:  # On Heroku?
     import logging
     stream_handler = logging.StreamHandler()
     app.logger.addHandler(stream_handler)

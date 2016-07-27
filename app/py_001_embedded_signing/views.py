@@ -9,7 +9,7 @@ def index():
     r = py_001_embedded_signing.send()
     if r["err"]:
         flash(r["err"])
-        return redirect("../")
+        return redirect(ds_recipe_lib.get_base_url(2))
     else:
         return render_template('generic_sent.html', title='Embedded Signing--Python', data=r, base_url=ds_recipe_lib.get_base_url(2))
         # base_url is the home page in the nav bar
@@ -19,7 +19,7 @@ def get_view():
     r = py_001_embedded_signing.get_view()
     if r["err"]:
         flash(r["err"])
-        return redirect("../")
+        return redirect(ds_recipe_lib.get_base_url(2))
     else:
         return redirect(r["redirect_url"])
         # We are redirecting the user to the DocuSign signing ceremony
@@ -32,7 +32,7 @@ def return_url():
     r = py_001_embedded_signing.return_url()
     if r["err"]:
         flash(r["err"])
-        return redirect("../")
+        return redirect(ds_recipe_lib.get_base_url(2))
     else:
         return render_template('generic_sent.html', title='Embedded Signing--Python', data=r, base_url=ds_recipe_lib.get_base_url(2))
         # base_url is the home page in the nav bar
@@ -42,7 +42,7 @@ def get_doc():
     r = py_001_embedded_signing.get_doc()
     if r["err"]:
         flash(r["err"])
-        return redirect("../")
+        return redirect(ds_recipe_lib.get_base_url(2))
     else:
         response = make_response(r["pdf"])
         response.headers['Content-Type'] = 'application/pdf'
