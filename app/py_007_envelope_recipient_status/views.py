@@ -9,7 +9,7 @@ def index():
     r = py_007_envelope_recipient_status_lib.start()
     if r["err"]:
         flash(r["err"])
-        return redirect("../")
+        return redirect(ds_recipe_lib.get_base_url(2))
     else:
         return render_template('generic_show_response.html', title='EnvelopeRecipients: list--Python', data=r, base_url=ds_recipe_lib.get_base_url(2))
         # base_url is the home page in the nav bar
