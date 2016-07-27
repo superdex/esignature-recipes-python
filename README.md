@@ -10,6 +10,9 @@ DocuSign Signature REST API recipes:
 * Embedded signing. See app/py_001_embedded_signing
 * Sending a signature request via email. See app/py_004_email_send
 * Sending a signature request using a template. See app/py_002_email_send_template
+* Get envelopes’ statuses. See app/py_005_envelope_list_status
+* Get an envelope’s status. See app/py_006_envelope_status
+* Get an envelope’s recipient statuses. See app/py_007_envelope_recipient_status
 * Using a webhook to receive status changes. See app/lib_master_python/ds_webhook.py
 * Authenticating with the Signature REST API. See app/lib_master_python/ds_authentication.py
 
