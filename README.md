@@ -15,6 +15,7 @@ DocuSign Signature REST API recipes:
 * Get an envelope’s recipient statuses. See app/py_007_envelope_recipient_status
 * Using a webhook to receive status changes. See app/lib_master_python/ds_webhook.py
 * Authenticating with the Signature REST API. See app/lib_master_python/ds_authentication.py
+* Embedded tagging and sending of an envelope. See app/py_012_embedded_tagging
 
 ## API Logging Feature
 The application also enables you to easily view your account’s API logs. It shows all API requests to your
