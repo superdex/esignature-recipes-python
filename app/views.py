@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, jsonify, request
+from flask import render_template, flash, redirect, jsonify, request, session
 from app import app
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_authentication
@@ -40,6 +40,21 @@ def auth_redirect():
     if err:
         flash(err)
     # flash("Debug info: " + str(request.headers))
+    
+    # Authentication / re-authentication was successful
+    # Figure out what to do next
+    if "auth_redirect" in session:
+        auth_redirect = session["auth_redirect"]
+        if auth_redirect:
+            session["auth_redirect"] = False
+            return redirect(auth_redirect)
+    
+    return redirect(ds_recipe_lib.get_base_url(1))
+    
+@app.route('/oauth_force_reauthenticate', methods=['GET'])
+def oauth_force_reauthenticate():
+    session["oauth_force_re_auth"] = True
+    flash("OAuth will be forced to re-authenticate")
     return redirect(ds_recipe_lib.get_base_url(1))
 
 ################################################################################
@@ -79,15 +94,33 @@ def logging_page():
 
 @app.route('/logs_download', methods=['POST'])
 def logs_download():
-    return jsonify(ds_api_logging.logs_download())
+    r = ds_api_logging.logs_download()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url(1) + "/logging_page")
+    if redirect_url:
+        r["err"] = "Please authenticate"
+        r["err_code"] = "PLEASE_REAUTHENTICATE"
+        r["redirect_url"] = redirect_url
+    return jsonify(r)
 
 @app.route('/logging_status', methods=['GET'])
 def get_logging_status():
-    return jsonify(ds_api_logging.get_logging_status())
+    r = ds_api_logging.get_logging_status()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url(1) + "/logging_page")
+    if redirect_url:
+        r["err"] = "Please authenticate"
+        r["err_code"] = "PLEASE_REAUTHENTICATE"
+        r["redirect_url"] = redirect_url
+    return jsonify(r)
 
 @app.route('/logs_list', methods=['GET'])
 def logs_list():
-    return jsonify(ds_api_logging.logs_list())
+    r = ds_api_logging.logs_list()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url(1) + "/logging_page")
+    if redirect_url:
+        r["err"] = "Please authenticate"
+        r["err_code"] = "PLEASE_REAUTHENTICATE"
+        r["redirect_url"] = redirect_url
+    return jsonify(r)
 
 @app.route('/delete_logs', methods=['POST'])
 def delete_logs():

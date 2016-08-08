@@ -8,6 +8,7 @@ import requests, os, base64, time, urllib
 # See https://urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
 
+from app.lib_master_python import ds_authentication
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_webhook
 from flask import request, session
@@ -45,17 +46,13 @@ def send():
     ds_cc1_name = ds_recipe_lib.get_signer_name(ds_cc1_name_orig)
 
     # STEP 1 - Fetch Authentication information from session
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
 
     #
     # STEP 2 - Create and send envelope
     #
-
     # construct the body of the request
     file_contents = open(doc_document_path, "rb").read()
 
@@ -209,12 +206,9 @@ def get_view():
     """
 
     err = False # No problems so far!
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
 
     if not embedded_signing_key in session:
         return {"err": "Embedded signing information missing from session! Please re-send."}
@@ -309,7 +303,7 @@ def return_url():
     envelope_status = get_status(embedding_info["envelopeId"])
     # In the following, the default filename would be better if it included information connecting it
     # to the specific transaction. Eg, for an NDA transaction, it could be the company name and date.
-    if envelope_status:
+    if envelope_status and not envelope_status["err"]:
         html += ('<div class="margintop">' +
             "<p>View the envelope's documents and Certificate of Completion</p>" +
             "<p><form class='margintop' action='get_doc'>" +
@@ -367,13 +361,10 @@ def get_status(envelope_id):
     #     "isSignatureProviderEnvelope": "false"
     # }
 
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return False
-    else:
-        return False
-
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
+    
     # append "/envelopes/{envelopeId}" to the baseUrl and use in the request
     url = auth["base_url"] + '/envelopes/{}'.format(envelope_id) + "?cache_buster={}".format(time.time())
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
@@ -388,7 +379,9 @@ def get_status(envelope_id):
     if (status != 200):
         return False
 
-    return r.json()
+    result = r.json()
+    result["err"] = False
+    return result
 
 
 def get_doc():
@@ -398,12 +391,9 @@ def get_doc():
     Returns {err, pdf, filename}
     """
     err = False # No problems so far!
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
 
     uri = request.args.get("url")
     fn = request.args.get("fn")

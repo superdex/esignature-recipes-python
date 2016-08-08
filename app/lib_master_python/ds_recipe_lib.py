@@ -19,6 +19,9 @@ heroku_env = 'DYNO' # Used to detect if we're on Heroku
 ########################################################################
 ########################################################################
 
+def log(msg):
+    sys.stderr.write("### ### ### " + str(msg) + "\n")
+
 def get_signer_name(name):
     if (not name or name == "***"):
         name = get_fake_name()

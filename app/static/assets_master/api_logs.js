@@ -60,9 +60,12 @@
             contentType: "application/json; charset=utf-8", dataType: "json"
         })
             .done(function (data, textStatus, jqXHR) {
-                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "AUTHENTICATE") {
+                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "PLEASE_AUTHENTICATE") {
                     $(logging_status).html("<b>Problem:</b> " + data.err + 
                     " <a class='btn btn-primary' role='button' href='..'>Authenticate</a>");
+                } else if (data.err && data.hasOwnProperty("err_code") && data.err_code === "PLEASE_REAUTHENTICATE") {
+                    $(logging_status).html("<b>Problem:</b> Authentication has expired. Re-authentication in 3 seconds");
+                    var timer = window.setTimeout(function redirect(){window.location = data.redirect_url}, 3000);
                 } else if (data.err) {
                         $(logging_status).html("<b>Problem:</b> " + data.err);
                 } else {
@@ -98,6 +101,9 @@
                     if (data.hasOwnProperty('err_code') && data.err_code === 404) {
                         $(feedback_el).html("No logging entries to download.");
                         window.setTimeout(function(){$(feedback_el).html("")}, 8000);
+                    } else if (data.hasOwnProperty("err_code") && data.err_code === "PLEASE_REAUTHENTICATE") {
+                        $(feedback_el).html("<b>Problem:</b> Authentication has expired. Re-authentication in 3 seconds");
+                        var timer = window.setTimeout(function redirect(){window.location = data.redirect_url}, 3000);
                     } else {
                         $(feedback_el).html("<b>Problem:</b> " + data.err);
                     }
@@ -126,7 +132,10 @@
             url: "logs_list" + "?" + Date.now(), type: "GET",
             contentType: "application/json; charset=utf-8", dataType: "json"})
             .done(function(data, textStatus, jqXHR) {
-                if (data.err) {
+                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "PLEASE_REAUTHENTICATE") {
+                    $(feedback_el).html("<b>Problem:</b> Authentication has expired. Re-authentication in 3 seconds");
+                    var timer = window.setTimeout(function redirect(){window.location = data.redirect_url}, 3000);
+                } else if (data.err) {
                     stop_feedback();
                     $(feedback_el).html("<b>Problem:</b> " + data.err);
                 } else {
@@ -240,11 +249,11 @@
 	
 		$(item_info_el).html("<h2>Working...</h2>").show();
 		$.ajax({url: item.url, type: 'get'})
-		.fail(function(jqXHR, textStatus, errorThrown) {
-		    $(item_info_el).html(
-                "<h3>Problem: Couldn’t fetch the file</h3><p>URL: " + item.url + "</p><p>Status: " + textStatus + "</p>");
-		})
-		.done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item); $(item_info_el).hide()})
+		    .fail(function(jqXHR, textStatus, errorThrown) {
+		        $(item_info_el).html(
+                    "<h3>Problem: Couldn’t fetch the file</h3><p>URL: " + item.url + "</p><p>Status: " + textStatus + "</p>");
+		        })
+		    .done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item); $(item_info_el).hide()})
 	}
 
     var do_show_item = function(data, textStatus, jqXHR, item) {
