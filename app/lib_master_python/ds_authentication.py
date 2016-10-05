@@ -15,6 +15,7 @@ from app.lib_master_python import ds_recipe_lib
 ds_account_id = None # If you're looking for a specific account_id, set this var
 ds_legacy_login_url = "https://demo.docusign.net/restapi/v2/login_information" # change for production
 oauth_authentication_server = "https://account-d.docusign.com/" # change for production
+oauth_authentication_server = "https://account.docusign.com/" # production setting
 oauth_start = oauth_authentication_server + "oauth/auth"
 oauth_token = oauth_authentication_server + "oauth/token"
 oauth_userInfo = oauth_authentication_server + "oauth/userinfo"
@@ -23,7 +24,7 @@ ca_bundle = "app/static/assets_master/ca-bundle.crt"
 oauth_scope = "signature"
 
 oauth_opportunistic_re_auth = 60 * 30 # refesh OAuth it expires in less than 30 minutes
-oauth_force_token_refresh = True # Should we force token refresh?
+oauth_force_token_refresh = False # Should we force token refresh?
 
 # When an access token has expired, you'll get the error response:
 # "errorCode": "AUTHORIZATION_INVALID_TOKEN"
@@ -45,6 +46,7 @@ oauth_force_token_refresh = True # Should we force token refresh?
 #        email
 #        type: {oauth_code, ds_legacy}
 #        account_id
+#        account_name
 #        base_url           # Used for API calls
 #        base_url_no_account # Used for account-independent API calls. Eg
 #        auth_header_key    # Used for API calls
@@ -76,7 +78,7 @@ def reauthenticate_check(r, redirect):
     if "oauth_force_re_auth" in session:
         oauth_force_re_auth = session["oauth_force_re_auth"]
         if oauth_force_re_auth:
-            # Check that we can do a re-authorization
+            # Check that we can do a re-authentication
             auth = session["auth"]
             oauth_force_re_auth = (auth["type"] == "oauth_code" and auth["client_id"] and auth["secret_key"]
                 and auth["redirect_uri"])
@@ -197,14 +199,17 @@ def token_refresh(auth):
     session["auth"] = auth
     return False
 
-def get_auth_status():
+def get_auth_status(redirecting=False):
     """Returns the authentication status of the current session
 
+    Parameter redirecting: is the user in the process of being redirected to OAuth?
     Returns a dictionary:
     auth_status = {
         authenticated: true/false,
+        oauth_redirect: false, or the url that the browser should be redirected to accomplish re-authentication
         description: string. Eg "Authenticated as John Doe <john@doe.com> for account 12345"
             or "Not authenticated"
+        auth: the auth object
         }
     """
     auth_status = {}
@@ -217,17 +222,37 @@ def get_auth_status():
         auth = {'authenticated': False}
 
     auth_status['authenticated'] = auth['authenticated']
+    auth_status["oauth_redirect"] = False
     auth_status['auth'] = auth
     if auth['authenticated']:
         auth_status['description'] = 'Authenticated via {} as {} &lt;{}&gt; for the {} account ({}).'.format(
             translator[auth['type']], auth['user_name'], auth['email'], auth['account_name'], auth['account_id'])
         if auth['type'] == 'oauth_code':
-            auth_status['token_expiration'] = ("The OAuth token expires in " + 
-                str(datetime.timedelta(seconds= auth["expires"] - int(time.time()))))
+            time_left = auth["expires"] - int(time.time())
+            if time_left > 0:
+                auth_status['token_expiration'] = ("The OAuth token expires in " + 
+                    str(datetime.timedelta(seconds= time_left)))
+            else:  # Already expired
+                auth_status['token_expiration'] = ("The OAuth token has expired. A Token Refresh will be attempted.")                
             auth_status['description'] += " </br>" + auth_status['token_expiration']
-        
     else:
-        auth_status['description'] = "You are not authenticated. Please choose an authentication method and submit the information:"
+        # Two options:
+        if (not redirecting and "type" in auth and auth["type"] == "oauth_code" and 
+            "client_id" in auth and auth["client_id"] and
+            "secret_key" in auth and auth["secret_key"]):
+            # re-authenticate via OAuth
+            oauth_state = hashlib.sha256(os.urandom(1024)).hexdigest()
+            auth["oauth_state"] = oauth_state 
+            session["auth"] = auth # Store updated info            
+            
+            auth_status["oauth_redirect"] = (oauth_start +
+                "?response_type=code" +
+                "&scope=" + oauth_scope +
+                "&client_id=" + auth["client_id"] +
+                "&state=" + oauth_state +
+                "&redirect_uri=" + auth["redirect_uri"])
+        else:
+            auth_status['description'] = "You are not authenticated. Please choose an authentication method and submit the information:"
 
     return auth_status
 
@@ -260,7 +285,7 @@ def set_auth():
 
     if req["type"] == "oauth_code":
         r = set_auth_oauth_code(req)
-        return {"err": r["err"], "redirect": r["redirect"], "auth_status": get_auth_status()}
+        return {"err": r["err"], "redirect": r["redirect"], "auth_status": get_auth_status(True)}
 
 def set_auth_ds_legacy(req):
     """Authenticate the user using legacy technique
@@ -320,8 +345,8 @@ def set_auth_oauth_code(req):
                        "client_id": client_id,
                        "secret_key": secret_key,
                        "oauth_state": oauth_state,
-                       "redirect_uri": redirect_uri}
-
+                       "redirect_uri": redirect_uri}    
+    
     redirect = (oauth_start +
         "?response_type=code" +
         "&scope=" + oauth_scope +
@@ -445,7 +470,8 @@ def auth_redirect():
         auth = session['auth']
     else:
         e = "No authentication information in the session! Possible CSRF attack!"
-        ds_recipe_lib.log("OAuth problem: " + e)        
+        ds_recipe_lib.log("OAuth problem: " + e)       
+        delete_auth()
         return e
 
     oauth_state = auth['oauth_state']
@@ -453,23 +479,28 @@ def auth_redirect():
     if incoming_state != oauth_state:
         e = "Authentication state information mismatch! Possible CSRF attack!"
         ds_recipe_lib.log("OAuth problem: " + e)        
+        ds_recipe_lib.log("Incoming state: " + incoming_state + " Stored state: " + oauth_state)        
+        delete_auth()
         return e
         
     incoming_error_message = request.args.get('error_message')
     if incoming_error_message:
         ds_recipe_lib.log("OAuth error message: " + incoming_error_message)        
+        delete_auth()
         return incoming_error_message
 
     incoming_code = request.args.get('code')
     if not incoming_code:
         e = "Code was not supplied by server! Please contact your administrator."
         ds_recipe_lib.log("OAuth problem: " + e)        
+        delete_auth()
         return e
 
     # Exchange the code for tokens
     e = oauth_token_for_code(auth, incoming_code)
     if e:
         ds_recipe_lib.log("OAuth problem converting code to token: " + e)
+        delete_auth()
         return e
     else:
         ds_recipe_lib.log("OAuth: converted code to token!")        
@@ -480,7 +511,7 @@ def auth_redirect():
         ds_recipe_lib.log("OAuth problem getting user info: " + e)        
     else:
         ds_recipe_lib.log("OAuth: got user info!")        
-    return e  # If no errors, then redirect to home page. The user is now authenticated!
+    return e  # If no errors, then continue. The user is now authenticated!
 
 def oauth_token_for_code(auth, code):
     """Calls the authentication service to get the tokens in return for the code
@@ -551,19 +582,19 @@ def get_oauth_user_info():
     response = r.json()
     # Example response:
     # {
-    #     "sub": "50d89ab1-dad5-4a0a-b410-92ee3110b970",
+    #     "sub": "50d89ab1-dad5-4a0a-1234-1234567890",
     #     "accounts": [
     #         {
-    #          "account_id": "e783eff5-53e1-45b2-b599-3810e89c2aac",
+    #          "account_id": "e783eff5-53e1-45b2-1234-1234567890",
     #          "is_default": true,
     #          "account_name": "NewCo",
     #          "base_uri": "https://demo.docusign.net"
     #          }
     #     ],
-    #     "name": "Dev User",
-    #     "given_name": "Dev",
-    #     "family_name": "User",
-    #     "email": "dev.user@docusign.com"
+    #     "name": "Susan Smith",
+    #     "given_name": "Susan",
+    #     "family_name": "Smith",
+    #     "email": "susan.smith@example.com"
     # }
 
     account_id = None

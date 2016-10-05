@@ -39,7 +39,7 @@
             location = window.location,
             url = location.protocol + '//' + location.host + location.pathname + redirect_uri;
 
-        $("#code_redirect_uri, #implicit_redirect_uri").val(url);
+        $("#code_redirect_uri").val(url);
     }
 
 	function home_auth_start(){
@@ -54,6 +54,9 @@
             unauthenticate = "#unauthenticate";
         $.ajax({url: auth_status_url + "?" + Date.now()})
 			.done(function(data, textStatus, jqXHR) {
+                if (data.oauth_redirect) {
+                    window.location = data.oauth_redirect; // Re-authenticate
+                }
                 $(target).html(data.description);
                 auth_status_display(data);
 				if (data.authenticated) {
@@ -103,7 +106,10 @@
 			text.push("<p>Base URL: " + auth.base_url  + ".</p>");
 			if (oauth) {
 				text.push("<p>OAuth Refresh Token: <span style='font-size: xx-small;'>" + auth.refresh_token + ".</span></p>");
-			}
+			    text.push("<p><form action='" + window.recipe_framework_base + "/oauth_force_reauthenticate'>" +
+                          "<button type='submit' class='btn btn-primary'>Force re-authentication</button>" +
+                          "</form></p>");
+            }
 		}
 		text.push('<p><button type="button" class="btn" data-close="options-form">Close</button></p>');
 		$(panel).html(text.join("\n"));

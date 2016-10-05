@@ -53,7 +53,8 @@
 	</div><!-- /.container -->
 
 <!-- Bootstrap core JavaScript -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
 <!-- Latest compiled and minified JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script><!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script src="{{ url_for('static', filename='assets_master/ie10-viewport-bug-workaround.js') }}"></script>
@@ -64,8 +65,10 @@
 <script src="https://cdn.jsdelivr.net/g/ace@1.2.3(noconflict/ace.js+noconflict/mode-xml.js+noconflict/mode-json.js+noconflict/theme-chrome.js)"></script>
 
 <!-- JS for the recipes -->
+<script>window.recipe_framework_base = "{{base_url}}";</script>
 <script src="{{ url_for('static', filename='assets_master/recipes.js') }}"></script>
 <script src="{{ url_for('static', filename='assets_master/api_logs.js') }}"></script>
+<script src="{{ url_for('static', filename='assets_master/search_page.js') }}"></script>
 {% block footer_content %}{% endblock %}
 </body>
 </html>
