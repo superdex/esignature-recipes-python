@@ -46,12 +46,9 @@ def send():
     ds_cc1_name = ds_recipe_lib.get_signer_name(ds_cc1_name_orig)
 
     # STEP 1 - Fetch Authentication information from session
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
 
     #
     # STEP 2 - lookup the template

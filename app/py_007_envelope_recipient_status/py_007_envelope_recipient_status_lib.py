@@ -34,12 +34,9 @@ def start():
     # Ready...
 
     # STEP 1 - Fetch Authentication information from session
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
         
     if not 'latest_envelope_id' in session:
         return {"err": "Problem, no envelope ID is available. Please send an envelope with a different recipe, then retry the Envelope Recipient Status recipe."}

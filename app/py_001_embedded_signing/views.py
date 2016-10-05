@@ -47,7 +47,7 @@ def return_url():
         return render_template('generic_sent.html', title='Embedded Signing--Python', data=r, base_url=ds_recipe_lib.get_base_url(2))
         # base_url is the home page in the nav bar
 
-@bp_001.route('/get_doc')  # DocuSign redirects to here after the person finishes signing
+@bp_001.route('/get_doc')  # Downdload a document from the envelope
 def get_doc():
     r = py_001_embedded_signing.get_doc()
     redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
