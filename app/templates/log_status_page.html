@@ -125,6 +125,9 @@
           + Headers</a></p>
       <div class="collapse" id="request-headers">
           <div class="well">
+              {{#if request.trace }}
+                  <p>Trace Information<pre>{{request.trace}}</pre></p>
+              {{/if}}
               <p>Request Headers<pre>{{request.headers}}</pre></p>
           </div>
       </div>
