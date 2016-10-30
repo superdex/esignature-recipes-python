@@ -10,6 +10,7 @@
         omit_image_text  = "[Image data omitted]",
         item_intro_template,
         request_tab_template,
+        raw_tab_template,
         response_tab_template;
             
     // FORMAT OF THE TOC ENTRIES
@@ -316,6 +317,9 @@
                 var re_omit64 = /"documentBase64":\s*"([^"]*)"/g;
                 raw = raw.replace(re_omit64, '"documentBase64":"' + omit_base64_text +'"');
                 
+                var re_omit_pdf_bytes = /\<PDFBytes\>([^\<]*)\</g;
+                raw = raw.replace(re_omit_pdf_bytes, '<PDFBytes>' + omit_base64_text +'<');
+                                
                 var re_omit_images = /"imageBytes":\s*"([^"]*)"/g;
                 raw = raw.replace(re_omit_images, '"imageBytes":"' + omit_image_text +'"');
             }
@@ -345,16 +349,22 @@
             var cr_index = raw.indexOf(eol);
             parsed.response.status = raw.substring(0, cr_index);
             raw = raw.substring(cr_index + eol_size); // Now raw starts with the response headers
-            end_of_headers = raw.indexOf(eol + eol);
-            parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
-            raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body
+            
+            if (raw == "[SOAP Response body omitted]") {
+                // We're in an ommitted SOAP response
+                parsed.response.headers = "";
+            } else {
+                end_of_headers = raw.indexOf(eol + eol);
+                parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+                raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body                
+            }
 
             // Find the response content type. Eg Content-Type: application/pdf
             ct = content_type(parsed.response.headers);
             parsed.response.content_type = ct;
             if (!ct) {
-                // Very strange that the *response* doesn't have a content type. Assume it's json
-                ct = "application/json"
+                // Very strange that the *response* doesn't have a content type. Assume it's text
+                ct = "text/plain"
             }
             parsed.response.content_type_json = ct === "application/json";
             parsed.response.content_type_multipart = ct.includes("multipart");
@@ -384,7 +394,7 @@
         $("#item-intro").html(item_intro_template(parsed));
         $("#request-tab").html(request_tab_template(parsed));
         $("#response-tab").html(response_tab_template(parsed));
-        $("#raw-tab").html(parsed.raw);
+        $("#raw-tab").html(raw_tab_template(parsed));
         $("#raw_download").html("<a download='" + parsed.request.method_name + 
         ".txt' type='application/octet-stream'>Download the raw log entry</a>");
         var d = new Blob([parsed.raw]);
@@ -562,6 +572,7 @@
         item_intro_template = Handlebars.compile($("#item-intro-template").html()); // Compile the templates once
         request_tab_template = Handlebars.compile($("#request-tab-template").html());
         response_tab_template = Handlebars.compile($("#response-tab-template").html());
+        raw_tab_template = Handlebars.compile($("#raw-tab-template").html());
         
         logs_initial_download();
 	    window_resized();

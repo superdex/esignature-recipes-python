@@ -47,7 +47,7 @@
                               </div>
                               <div class="tab-pane fade" id="tab3primary">
                                   <p>Raw Request and Response <span class="marginleft" id="raw_download"></span></p>
-                                  <pre id="raw-tab"></pre>
+                                  <div id="raw-tab"></div>
                               </div>
                           </div>
                       </div>
@@ -134,7 +134,7 @@
           {{#if request.content_type_json }}
               {{#if request.json_problem }}<h4>{{request.json_problem}}</h4>{{else}}<p>JSON Request Body</p>{{/if}}    
           {{ else }}
-              <p>Request body content type: {{request.content_type}}</p>
+              {{#if request.content_type }}<p>Request body content type: {{request.content_type}}</p>{{/if}}
           {{/if}}                        
       {{ else }}<p>No request body.</p>{{/if}}
     </script>
@@ -153,9 +153,13 @@
           {{#if response.content_type_json }}
               {{#if response.json_problem }}<h4>{{response.json_problem}}</h4>{{else}}<p>JSON Response Body</p>{{/if}}    
           {{ else }}
-              <p>Response body content type: {{response.content_type}}</p>
+              {{#if response.content_type }}<p>Response body content type: {{response.content_type}}</p>{{/if}}
           {{/if}}                        
       {{ else }}<p>No response body.</p>{{/if}}
+    </script>                
+
+    <script id="raw-tab-template" type="text/x-handlebars-template"> 
+      <pre>{{ raw }}</pre>
     </script>                
     {% endraw %}
 {% endblock %}
