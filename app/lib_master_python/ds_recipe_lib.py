@@ -3,7 +3,7 @@
 # Set encoding to utf8. See http:#stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
-import os, base64, string, urllib, random, re
+import os, base64, string, urllib, random, re, json
 from flask import request
 # See http:#requests.readthedocs.org/ for information on the requests library
 # See https:#urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
@@ -18,6 +18,14 @@ heroku_env = 'DYNO' # Used to detect if we're on Heroku
 ########################################################################
 ########################################################################
 ########################################################################
+
+def log(msg):
+    sys.stderr.write("### ### ### " + str(msg) + "\n")
+
+def log_obj(msg, obj):
+    obj_str = json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': '))
+    sys.stderr.write("### ### ### " + str(msg) + ": " + obj_str + "\n")
+
 
 def get_signer_name(name):
     if (not name or name == "***"):

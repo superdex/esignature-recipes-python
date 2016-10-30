@@ -36,12 +36,9 @@ def start():
     # Ready...
 
     # STEP 1 - Fetch Authentication information from session
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return {"err": "Please authenticate with DocuSign."}
-    else:
-        return {"err": "Please authenticate with DocuSign."}
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
 
     #
     # STEP 2 - Create and send the request

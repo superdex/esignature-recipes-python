@@ -3,6 +3,7 @@
 
 # App's temp files
 app/static/files/*
+(*/.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

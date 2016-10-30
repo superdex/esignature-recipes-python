@@ -1,12 +1,16 @@
 from flask import render_template, Blueprint, flash, redirect, make_response
 import py_001_embedded_signing
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_authentication
 
 bp_001 = Blueprint('py_001_embedded_signing', __name__)
 
 @bp_001.route('/')  # Sends the envelope and shows the result
 def index():
     r = py_001_embedded_signing.send()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
+    if redirect_url:
+        return redirect(redirect_url)
     if r["err"]:
         flash(r["err"])
         return redirect(ds_recipe_lib.get_base_url(2))
@@ -17,6 +21,9 @@ def index():
 @bp_001.route('/get_view')  # Obtains view url and then redirects to it
 def get_view():
     r = py_001_embedded_signing.get_view()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
+    if redirect_url:
+        return redirect(redirect_url)
     if r["err"]:
         flash(r["err"])
         return redirect(ds_recipe_lib.get_base_url(2))
@@ -30,6 +37,9 @@ def get_view():
 @bp_001.route('/return_url')  # DocuSign redirects to here after the person finishes signing
 def return_url():
     r = py_001_embedded_signing.return_url()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
+    if redirect_url:
+        return redirect(redirect_url)
     if r["err"]:
         flash(r["err"])
         return redirect(ds_recipe_lib.get_base_url(2))
@@ -37,9 +47,12 @@ def return_url():
         return render_template('generic_sent.html', title='Embedded Signing--Python', data=r, base_url=ds_recipe_lib.get_base_url(2))
         # base_url is the home page in the nav bar
 
-@bp_001.route('/get_doc')  # DocuSign redirects to here after the person finishes signing
+@bp_001.route('/get_doc')  # Downdload a document from the envelope
 def get_doc():
     r = py_001_embedded_signing.get_doc()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
+    if redirect_url:
+        return redirect(redirect_url)
     if r["err"]:
         flash(r["err"])
         return redirect(ds_recipe_lib.get_base_url(2))
@@ -48,5 +61,3 @@ def get_doc():
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = 'inline; filename={}.pdf'.format(r['filename'])
         return response
-
-

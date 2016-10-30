@@ -13,6 +13,8 @@ webhook_path = "/webhook"
 xml_file_dir = "app/static/files/"
 doc_prefix = "doc_"
 heroku_env = 'DYNO' # Used to detect if we're on Heroku
+trace_value = "py_webhook" # Used for tracing API calls
+trace_key = "X-ray"
 
 ########################################################################
 ########################################################################
@@ -199,7 +201,8 @@ def status_page(envelope_id):
     # Calls Envelopes: get. See https://docs.docusign.com/esign/restapi/Envelopes/Envelopes/get/
     # Calls GET /accounts/{accountId}/envelopes/{envelopeId}
     url = auth["base_url"] + "/envelopes/{}".format(envelope_id)
-    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"]}
+    ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
+        trace_key: trace_value}
     try:
         r = requests.get(url, headers=ds_headers)
     except requests.exceptions.RequestException as e:

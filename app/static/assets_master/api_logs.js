@@ -10,6 +10,7 @@
         omit_image_text  = "[Image data omitted]",
         item_intro_template,
         request_tab_template,
+        raw_tab_template,
         response_tab_template;
             
     // FORMAT OF THE TOC ENTRIES
@@ -60,9 +61,12 @@
             contentType: "application/json; charset=utf-8", dataType: "json"
         })
             .done(function (data, textStatus, jqXHR) {
-                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "AUTHENTICATE") {
+                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "PLEASE_AUTHENTICATE") {
                     $(logging_status).html("<b>Problem:</b> " + data.err + 
                     " <a class='btn btn-primary' role='button' href='..'>Authenticate</a>");
+                } else if (data.err && data.hasOwnProperty("err_code") && data.err_code === "PLEASE_REAUTHENTICATE") {
+                    $(logging_status).html("<b>Problem:</b> Authentication has expired. Re-authentication in 3 seconds");
+                    var timer = window.setTimeout(function redirect(){window.location = data.redirect_url}, 3000);
                 } else if (data.err) {
                         $(logging_status).html("<b>Problem:</b> " + data.err);
                 } else {
@@ -98,6 +102,9 @@
                     if (data.hasOwnProperty('err_code') && data.err_code === 404) {
                         $(feedback_el).html("No logging entries to download.");
                         window.setTimeout(function(){$(feedback_el).html("")}, 8000);
+                    } else if (data.hasOwnProperty("err_code") && data.err_code === "PLEASE_REAUTHENTICATE") {
+                        $(feedback_el).html("<b>Problem:</b> Authentication has expired. Re-authentication in 3 seconds");
+                        var timer = window.setTimeout(function redirect(){window.location = data.redirect_url}, 3000);
                     } else {
                         $(feedback_el).html("<b>Problem:</b> " + data.err);
                     }
@@ -126,7 +133,10 @@
             url: "logs_list" + "?" + Date.now(), type: "GET",
             contentType: "application/json; charset=utf-8", dataType: "json"})
             .done(function(data, textStatus, jqXHR) {
-                if (data.err) {
+                if (data.err && data.hasOwnProperty("err_code") && data.err_code === "PLEASE_REAUTHENTICATE") {
+                    $(feedback_el).html("<b>Problem:</b> Authentication has expired. Re-authentication in 3 seconds");
+                    var timer = window.setTimeout(function redirect(){window.location = data.redirect_url}, 3000);
+                } else if (data.err) {
                     stop_feedback();
                     $(feedback_el).html("<b>Problem:</b> " + data.err);
                 } else {
@@ -240,11 +250,11 @@
 	
 		$(item_info_el).html("<h2>Working...</h2>").show();
 		$.ajax({url: item.url, type: 'get'})
-		.fail(function(jqXHR, textStatus, errorThrown) {
-		    $(item_info_el).html(
-                "<h3>Problem: Couldn’t fetch the file</h3><p>URL: " + item.url + "</p><p>Status: " + textStatus + "</p>");
-		})
-		.done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item); $(item_info_el).hide()})
+		    .fail(function(jqXHR, textStatus, errorThrown) {
+		        $(item_info_el).html(
+                    "<h3>Problem: Couldn’t fetch the file</h3><p>URL: " + item.url + "</p><p>Status: " + textStatus + "</p>");
+		        })
+		    .done(function(data, textStatus, jqXHR){do_show_item(data, textStatus, jqXHR, item); $(item_info_el).hide()})
 	}
 
     var do_show_item = function(data, textStatus, jqXHR, item) {
@@ -260,6 +270,7 @@
         //      headers
         //      content_type
         //      content_type_json: boolean // is the request content-type JSON?
+        //      content_type_xml: boolean // is the request content-type XML?
         //      content_type_multipart: boolean
         //      json_problem: false or an error message // Does the JSON parse?
         //      body
@@ -306,6 +317,9 @@
                 var re_omit64 = /"documentBase64":\s*"([^"]*)"/g;
                 raw = raw.replace(re_omit64, '"documentBase64":"' + omit_base64_text +'"');
                 
+                var re_omit_pdf_bytes = /\<PDFBytes\>([^\<]*)\</g;
+                raw = raw.replace(re_omit_pdf_bytes, '<PDFBytes>' + omit_base64_text +'<');
+                                
                 var re_omit_images = /"imageBytes":\s*"([^"]*)"/g;
                 raw = raw.replace(re_omit_images, '"imageBytes":"' + omit_image_text +'"');
             }
@@ -319,16 +333,15 @@
             // NOTE: the request may or may not include the trace information. 
             // If it doesn't, then the "trace" info is really the header info.
             
-            if (parsed.request.trace.substring(0, 15) == "Content-Length:" ||
-                parsed.request.trace.substring(0, 11) == "Connection:") {
-                // No trace info
-                parsed.request.headers = parsed.request.trace;
-                parsed.request.trace = false;
-            } else {
+            if (parsed.request.trace.includes("Timestamp")) {
                 // Trace info provided. Pull out the headers
                 var end_of_headers = raw.indexOf(eol + eol);
                 parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
                 raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
+            } else {
+                // No trace info
+                parsed.request.headers = parsed.request.trace;
+                parsed.request.trace = false;
             }
             
             // Find the request Content-Type. Eg Content-Type: application/pdf
@@ -337,7 +350,8 @@
             parsed.request.content_type = ct;
             parsed.request.content_type_json = ct && ct === "application/json";
             parsed.request.content_type_multipart = ct && ct.includes("multipart");
-
+            parsed.request.content_type_xml = ct && ct.includes("text/xml");
+            
             var re_status = /^\d{3} [A-Z][A-Za-z]{1,}$/m,
                 end_of_req_body_index = raw.search(re_status);
 
@@ -349,23 +363,36 @@
             var cr_index = raw.indexOf(eol);
             parsed.response.status = raw.substring(0, cr_index);
             raw = raw.substring(cr_index + eol_size); // Now raw starts with the response headers
-            end_of_headers = raw.indexOf(eol + eol);
-            parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
-            raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body
+            
+            if (raw == "[SOAP Response body omitted]") {
+                // We're in an ommitted SOAP response
+                parsed.response.headers = "";
+            } else {
+                end_of_headers = raw.indexOf(eol + eol);
+                parsed.response.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+                raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the response body                
+            }
 
             // Find the response content type. Eg Content-Type: application/pdf
             ct = content_type(parsed.response.headers);
             parsed.response.content_type = ct;
             if (!ct) {
-                // Very strange that the *response* doesn't have a content type. Assume it's json
-                ct = "application/json"
+                // Very strange that the *response* doesn't have a content type. Assume it's text
+                ct = "text/plain"
             }
             parsed.response.content_type_json = ct === "application/json";
             parsed.response.content_type_multipart = ct.includes("multipart");
             parsed.response.body = raw;
             if (parsed.response.body === "" || parsed.response.body === eol) {parsed.response.body = false}
             parsed.response.show_editor = parsed.response.body !== false && !parsed.response.content_type_multipart;
+            parsed.response.content_download_show = "";
             
+            // The following needs API-5319 to be fixed before it can be implemented
+            //if (parsed.response.content_type == "application/pdf") {
+            //    parsed.response.content_download = "<a id='req_body_download' download='response_pdf.pdf'" + 
+            //    " type='application/octet-stream'>Download the response pdf</a>";
+            //}
+
             raw = null;
 
             // fill in json bodies with parse error check
@@ -388,23 +415,51 @@
         $("#item-intro").html(item_intro_template(parsed));
         $("#request-tab").html(request_tab_template(parsed));
         $("#response-tab").html(response_tab_template(parsed));
-        $("#raw-tab").html(parsed.raw);
+        $("#raw-tab").html(raw_tab_template(parsed));
         $("#raw_download").html("<a download='" + parsed.request.method_name + 
         ".txt' type='application/octet-stream'>Download the raw log entry</a>");
-        var d = new Blob([parsed.raw]);
+        
+        var d = new Blob([parsed.raw], {type : 'octet/stream'});
         $("#raw_download a").attr("href", URL.createObjectURL(d));
+        
+        // The following needs API-5319 to be fixed before it can be implemented
+        //if (parsed.response.content_type == "application/pdf") {
+        //    
+        //    // This conversion may not be necessary. Test after API-5319 is fixed...
+        //    var i, l, d, array;
+        //    d = parsed.response.body;
+        //    l = d.length;
+        //    array = new Uint8Array(l);
+        //    for (var i = 0; i < l; i++){
+        //        array[i] = d.charCodeAt(i);
+        //    }
+        //    var b = new Blob([array], {type: 'application/octet-stream'});
+        //                
+        //    // d = new Blob([parsed.response.body], {type : 'octet/stream'});
+        //    $("#req_body_download").attr("href", URL.createObjectURL(b));
+        //}
         
         // Add content to the editor windows as appropriate
         // Editors will be in 
         //   <div id="request-body-editor" class="log_editor"></div>                                
         //   <div id="response-body-editor" class="log_editor"></div>                                
         create_editors();
+        var XMLMode = ace.require("ace/mode/xml").Mode,
+            JSONMode = ace.require("ace/mode/json").Mode;
+        
         ["request", "response"].forEach(function(i){
             if (parsed[i].show_editor) {            
                 $("#" + i + "-body-editor").show();   
-                var value = parsed[i].body;
+                var value = parsed[i].body,
+                    ace_session = ace_editors[i].getSession();
+                
                 if (parsed[i].content_type_json && parsed[i].json_problem === false) {
                     value = JSON.stringify(parsed[i].json, null, 4);
+                    ace_session.setMode(new JSONMode());
+                }
+                if (parsed[i].content_type_xml) {
+                    value = vkbeautify.xml(parsed[i].body, 4);
+                    ace_session.setMode(new XMLMode());
                 }
                 ace_editors[i].setValue(value);
                 ace_editors[i].getSelection().clearSelection();
@@ -556,6 +611,7 @@
         item_intro_template = Handlebars.compile($("#item-intro-template").html()); // Compile the templates once
         request_tab_template = Handlebars.compile($("#request-tab-template").html());
         response_tab_template = Handlebars.compile($("#response-tab-template").html());
+        raw_tab_template = Handlebars.compile($("#raw-tab-template").html());
         
         logs_initial_download();
 	    window_resized();

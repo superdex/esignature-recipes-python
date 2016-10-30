@@ -6,6 +6,7 @@ import sys; reload(sys); sys.setdefaultencoding('utf8')
 import os, base64, json, requests, shutil, datetime, zipfile, StringIO
 
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_authentication
 from flask import request, session
 from bs4 import BeautifulSoup
 
@@ -32,7 +33,7 @@ def get_logging_status():
     Returns:
     logging_status = {
         err: False or a problem string.
-        err_code: False or codes eg 'GENERIC', 'AUTHENTICATE', 
+        err_code: False or codes eg 'GENERIC', 'PLEASE_AUTHENTICATE', 
         status: string description of the status
         logging: True / False
         remaining_entries: integer from the platform,
@@ -40,8 +41,11 @@ def get_logging_status():
         }
     """
 
-    if not check_auth():
-        return {"err": "Please authenticate.", 'err_code': "AUTHENTICATE"}
+    global auth
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
+            
     logging = logging_updateSettings() # returns {err, max_entries, remaining_entries, err_code}
     if logging['err']:
         return {"err": logging["err"]}
@@ -67,9 +71,6 @@ def delete_logs():
     Returns {err}
     """
     
-    if not check_auth():
-        return {"err": "Please authenticate.", 'err_code': "AUTHENTICATE"}
-    
     log_path = get_log_path()
     try:
         shutil.rmtree(log_path) # Remove the dir and contents
@@ -79,17 +80,6 @@ def delete_logs():
         pass
     make_deep_dir (log_path)
     return {"err": False}
-
-def check_auth():
-    global auth
-    if 'auth' in session:
-        auth = session['auth']
-        if not auth["authenticated"]:
-            return False
-    else:
-        return False
-
-    return True
 
 def logging_updateSettings():
     """Request logging and get current status
@@ -128,8 +118,10 @@ def logs_list():
     }
     Strategy: parse the log files on the clients.
     """
-    if not check_auth():
-        return {"err": "Please authenticate."}
+    global auth
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
     entries = []
     log_path = get_log_path()
     log_path_url = ds_recipe_lib.get_base_url(1) + "/" + log_storage_uri + "/" + account_id_to_dir(auth["account_id"]) + "/"
@@ -156,8 +148,10 @@ def logs_download():
     Returns {err: False or a problem string, entries: log_entries, err_code }
         returns an array of just the new log_entries
     """
-    if not check_auth():
-        return {"err": "Please authenticate.", 'err_code': "AUTHENTICATE"}
+    global auth
+    auth = ds_authentication.get_auth()
+    if auth["err"]:
+        return {"err": auth["err"], "err_code": auth["err_code"]}
     r = logging_do_download() # returns {err, new_entries}
     return r
 

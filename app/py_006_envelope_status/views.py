@@ -7,6 +7,9 @@ bp_006 = Blueprint('py_006_envelope_status', __name__)
 @bp_006.route('/')  # Sends the envelope and shows the result
 def index():
     r = py_006_envelope_status_lib.start()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
+    if redirect_url:
+        return redirect(redirect_url)
     if r["err"]:
         flash(r["err"])
         return redirect(ds_recipe_lib.get_base_url(2))

@@ -12,6 +12,9 @@ def index():
 @bp_002.route('/send', methods=['POST'])  # Sends the envelope and shows the result
 def send():
     r = py_002_email_send_template_lib.send()
+    redirect_url = ds_authentication.reauthenticate_check(r, ds_recipe_lib.get_base_url())
+    if redirect_url:
+        return redirect(redirect_url)
     if r["err"]:
         flash(r["err"])
         return redirect(url_for('.index')) # Note: redirect to this recipe's index page/form if there's a problem

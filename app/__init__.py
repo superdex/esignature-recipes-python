@@ -7,6 +7,8 @@ from app.py_005_envelope_list_status.views import bp_005
 from app.py_006_envelope_status.views import bp_006
 from app.py_007_envelope_recipient_status.views import bp_007
 from app.py_012_embedded_tagging.views import bp_012
+#from app.py_014_local_search.views import bp_014
+
 from app.lib_master_python.json_session_interface import JSONSessionInterface
 
 session_path = '/tmp/python_recipe_sessions'
@@ -21,6 +23,7 @@ app.register_blueprint(bp_005, url_prefix='/py_005_envelope_list_status')
 app.register_blueprint(bp_006, url_prefix='/py_006_envelope_status')
 app.register_blueprint(bp_007, url_prefix='/py_007_envelope_recipient_status')
 app.register_blueprint(bp_012, url_prefix='/py_012_embedded_tagging')
+#app.register_blueprint(bp_014, url_prefix='/py_014_local_search')
 
 if 'DYNO' in os.environ:  # On Heroku?
     import logging
@@ -32,6 +35,7 @@ if 'DYNO' in os.environ:  # On Heroku?
 
 from app import views
 
+# Set up sessions
 if not os.path.exists(session_path):
     os.mkdir(session_path)
     os.chmod(session_path, int('700', 8))
