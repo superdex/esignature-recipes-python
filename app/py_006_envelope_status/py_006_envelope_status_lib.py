@@ -9,6 +9,7 @@ import json, socket, certifi, requests, os, base64, re, urllib, shutil, datetime
 # See https://urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
 
+from app.lib_master_python import ds_authentication
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_webhook
 from flask import  session

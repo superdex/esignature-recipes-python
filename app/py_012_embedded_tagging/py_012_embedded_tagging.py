@@ -8,6 +8,7 @@ import requests, os, base64, time, urllib, re
 # See https://urllib3.readthedocs.org/en/latest/security.html for info on making secure https calls
 # in particular, run pip install certifi periodically to pull in the latest cert bundle
 
+from app.lib_master_python import ds_authentication
 from app.lib_master_python import ds_recipe_lib
 from app.lib_master_python import ds_webhook
 from flask import request, session
@@ -194,10 +195,11 @@ def get_view():
 
     return_url = ds_recipe_lib.get_base_url(2) + return_uri
     data = {"returnUrl": return_url}
+    send = request.args.get('send')
 
     # append "/envelopes/{envelopeId}/views/sender" to the baseUrl and use in the request
-    url = auth["base_url"] + '/envelopes/{}/views/sender'.format(
-        embedding_info["envelopeId"])
+    url = auth["base_url"] + '/envelopes/{}/views/sender?send={}'.format(
+        embedding_info["envelopeId"], send)
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
                   trace_key: trace_value}
 

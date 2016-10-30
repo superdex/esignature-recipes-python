@@ -1,6 +1,7 @@
 from flask import render_template, Blueprint, flash, redirect, make_response
 import py_012_embedded_tagging
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_authentication
 
 bp_012 = Blueprint('py_012_embedded_tagging', __name__)
 

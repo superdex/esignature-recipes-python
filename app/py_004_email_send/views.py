@@ -1,6 +1,7 @@
 from flask import render_template, Blueprint, flash, redirect
 import py_004_email_send_lib
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_authentication
 
 bp_004 = Blueprint('py_004_email_send', __name__)
 

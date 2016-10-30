@@ -1,6 +1,7 @@
 from flask import render_template, Blueprint, flash, redirect
 import py_007_envelope_recipient_status_lib
 from app.lib_master_python import ds_recipe_lib
+from app.lib_master_python import ds_authentication
 
 bp_007 = Blueprint('py_007_envelope_recipient_status', __name__)
 
