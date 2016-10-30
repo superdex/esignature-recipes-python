@@ -333,16 +333,15 @@
             // NOTE: the request may or may not include the trace information. 
             // If it doesn't, then the "trace" info is really the header info.
             
-            if (parsed.request.trace.substring(0, 15) == "Content-Length:" ||
-                parsed.request.trace.substring(0, 11) == "Connection:") {
-                // No trace info
-                parsed.request.headers = parsed.request.trace;
-                parsed.request.trace = false;
-            } else {
+            if (parsed.request.trace.includes("Timestamp")) {
                 // Trace info provided. Pull out the headers
                 var end_of_headers = raw.indexOf(eol + eol);
                 parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
                 raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
+            } else {
+                // No trace info
+                parsed.request.headers = parsed.request.trace;
+                parsed.request.trace = false;
             }
             
             // Find the request Content-Type. Eg Content-Type: application/pdf
