@@ -326,10 +326,25 @@
             
             parsed.request.url = line1.split(" ")[1];
             raw = raw.substring(end_of_line1 + eol_size); // remove first line
-            var end_of_headers = raw.indexOf(eol + eol);
-            parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
-            raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
+            var end_of_trace = raw.indexOf(eol + eol);
+            parsed.request.trace = raw.substring(0, end_of_trace).replace("\r\n", "\n");
+            raw = raw.substring(end_of_trace + eol_size * 2);  // Now raw starts at the beginning of the headers body
 
+            // NOTE: the request may or may not include the trace information. 
+            // If it doesn't, then the "trace" info is really the header info.
+            
+            if (parsed.request.trace.substring(0, 15) == "Content-Length:" ||
+                parsed.request.trace.substring(0, 11) == "Connection:") {
+                // No trace info
+                parsed.request.headers = parsed.request.trace;
+                parsed.request.trace = false;
+            } else {
+                // Trace info provided. Pull out the headers
+                var end_of_headers = raw.indexOf(eol + eol);
+                parsed.request.headers = raw.substring(0, end_of_headers).replace("\r\n", "\n");
+                raw = raw.substring(end_of_headers + eol_size * 2);  // Now raw starts at the beginning of the request body
+            }
+            
             // Find the request Content-Type. Eg Content-Type: application/pdf
             // NB, the request may not have a content type!
             var ct = content_type(parsed.request.headers);
@@ -371,7 +386,14 @@
             parsed.response.body = raw;
             if (parsed.response.body === "" || parsed.response.body === eol) {parsed.response.body = false}
             parsed.response.show_editor = parsed.response.body !== false && !parsed.response.content_type_multipart;
+            parsed.response.content_download_show = "";
             
+            // The following needs API-5319 to be fixed before it can be implemented
+            //if (parsed.response.content_type == "application/pdf") {
+            //    parsed.response.content_download = "<a id='req_body_download' download='response_pdf.pdf'" + 
+            //    " type='application/octet-stream'>Download the response pdf</a>";
+            //}
+
             raw = null;
 
             // fill in json bodies with parse error check
@@ -397,8 +419,26 @@
         $("#raw-tab").html(raw_tab_template(parsed));
         $("#raw_download").html("<a download='" + parsed.request.method_name + 
         ".txt' type='application/octet-stream'>Download the raw log entry</a>");
-        var d = new Blob([parsed.raw]);
+        
+        var d = new Blob([parsed.raw], {type : 'octet/stream'});
         $("#raw_download a").attr("href", URL.createObjectURL(d));
+        
+        // The following needs API-5319 to be fixed before it can be implemented
+        //if (parsed.response.content_type == "application/pdf") {
+        //    
+        //    // This conversion may not be necessary. Test after API-5319 is fixed...
+        //    var i, l, d, array;
+        //    d = parsed.response.body;
+        //    l = d.length;
+        //    array = new Uint8Array(l);
+        //    for (var i = 0; i < l; i++){
+        //        array[i] = d.charCodeAt(i);
+        //    }
+        //    var b = new Blob([array], {type: 'application/octet-stream'});
+        //                
+        //    // d = new Blob([parsed.response.body], {type : 'octet/stream'});
+        //    $("#req_body_download").attr("href", URL.createObjectURL(b));
+        //}
         
         // Add content to the editor windows as appropriate
         // Editors will be in 

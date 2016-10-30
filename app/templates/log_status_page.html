@@ -10,7 +10,7 @@
     </p></form>
     
     <form action="delete_logs" method="post">
-    <p id="status">Platform logging status: <span id="logging-status">tbd</span><span></span></span><a href="#" id="logging-status-refresh" class="marginleft">Refesh</a>
+    <p id="status">Platform logging status: <span id="logging-status">tbd</span><span></span></span><a href="#" id="logging-status-refresh" class="marginleft">Refresh</a>
         <button type="button" class="btn btn-primary marginleft" id="logging-download" data-feedback="feedback-download">Download Latest Logs</button>
         <span id="feedback-download"></span><span></span>
         <input type="submit" class="btn btn-danger marginleft" value="Delete Logs!" />
@@ -125,6 +125,9 @@
           + Headers</a></p>
       <div class="collapse" id="request-headers">
           <div class="well">
+              {{#if request.trace }}
+                  <p>Trace Information<pre>{{request.trace}}</pre></p>
+              {{/if}}
               <p>Request Headers<pre>{{request.headers}}</pre></p>
           </div>
       </div>
@@ -153,7 +156,11 @@
           {{#if response.content_type_json }}
               {{#if response.json_problem }}<h4>{{response.json_problem}}</h4>{{else}}<p>JSON Response Body</p>{{/if}}    
           {{ else }}
+<<<<<<< HEAD
               {{#if response.content_type }}<p>Response body content type: {{response.content_type}}</p>{{/if}}
+=======
+              <p>Response body content type: {{response.content_type}} {{{response.content_download}}}</p>
+>>>>>>> master
           {{/if}}                        
       {{ else }}<p>No response body.</p>{{/if}}
     </script>                
