@@ -15,7 +15,7 @@ from app.lib_master_python import ds_recipe_lib
 ds_account_id = None # If you're looking for a specific account_id, set this var
 ds_legacy_login_url = "https://demo.docusign.net/restapi/v2/login_information" # change for production
 oauth_authentication_server = "https://account-d.docusign.com/" # change for production
-oauth_authentication_server = "https://account.docusign.com/" # production setting
+#oauth_authentication_server = "https://account.docusign.com/" # production setting
 oauth_start = oauth_authentication_server + "oauth/auth"
 oauth_token = oauth_authentication_server + "oauth/token"
 oauth_userInfo = oauth_authentication_server + "oauth/userinfo"
@@ -233,7 +233,7 @@ def get_auth_status(redirecting=False):
                 auth_status['token_expiration'] = ("The OAuth token expires in " + 
                     str(datetime.timedelta(seconds= time_left)))
             else:  # Already expired
-                auth_status['token_expiration'] = ("The OAuth token has expired. A Token Refresh will be attempted.")                
+                auth_status['token_expiration'] = ("The OAuth token has expired. A Token Refresh will be attempted before your next operation.")                
             auth_status['description'] += " </br>" + auth_status['token_expiration']
     else:
         # Two options:

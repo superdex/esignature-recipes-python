@@ -269,6 +269,7 @@
         //      headers
         //      content_type
         //      content_type_json: boolean // is the request content-type JSON?
+        //      content_type_xml: boolean // is the request content-type XML?
         //      content_type_multipart: boolean
         //      json_problem: false or an error message // Does the JSON parse?
         //      body
@@ -331,7 +332,8 @@
             parsed.request.content_type = ct;
             parsed.request.content_type_json = ct && ct === "application/json";
             parsed.request.content_type_multipart = ct && ct.includes("multipart");
-
+            parsed.request.content_type_xml = ct && ct.includes("text/xml");
+            
             var re_status = /^\d{3} [A-Z][A-Za-z]{1,}$/m,
                 end_of_req_body_index = raw.search(re_status);
 
@@ -393,12 +395,22 @@
         //   <div id="request-body-editor" class="log_editor"></div>                                
         //   <div id="response-body-editor" class="log_editor"></div>                                
         create_editors();
+        var XMLMode = ace.require("ace/mode/xml").Mode,
+            JSONMode = ace.require("ace/mode/json").Mode;
+        
         ["request", "response"].forEach(function(i){
             if (parsed[i].show_editor) {            
                 $("#" + i + "-body-editor").show();   
-                var value = parsed[i].body;
+                var value = parsed[i].body,
+                    ace_session = ace_editors[i].getSession();
+                
                 if (parsed[i].content_type_json && parsed[i].json_problem === false) {
                     value = JSON.stringify(parsed[i].json, null, 4);
+                    ace_session.setMode(new JSONMode());
+                }
+                if (parsed[i].content_type_xml) {
+                    value = vkbeautify.xml(parsed[i].body, 4);
+                    ace_session.setMode(new XMLMode());
                 }
                 ace_editors[i].setValue(value);
                 ace_editors[i].getSelection().clearSelection();
