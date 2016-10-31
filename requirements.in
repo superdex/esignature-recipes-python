@@ -1,0 +1,12 @@
+beautifulsoup4
+certifi
+Flask-AutoIndex
+flask-heroku
+Flask-WTF
+future
+gunicorn
+iso8601
+itsdangerous
+lxml
+requests
+wheel
