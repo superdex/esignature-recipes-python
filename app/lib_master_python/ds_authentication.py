@@ -465,7 +465,7 @@ def rm_url_parts (url, remove):
 
 def delete_auth():
     """Delete the session's authentication information"""
-    session["auth"] = {"authenticated": False}
+    del session['auth']
     return {"err": False}
 
 ########################################################################
