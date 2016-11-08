@@ -6,15 +6,15 @@
   "env": {
       "DS_OAUTH_CLIENT_ID": {
         "description": "Optional: your OAuth client_id (Integration Key).",
-        "value": ""
+        "value": "***"
       },
       "DS_OAUTH_SECRET": {
         "description": "Optional: your OAuth secret.",
-        "value": ""
+        "value": "***"
       },
       "SET_REDIRECT":{
           "description": "You must add an OAuth redirect uri of <server>/auth_redirect",
-          "value": ""
+          "value": "***"
       }
       
 }
