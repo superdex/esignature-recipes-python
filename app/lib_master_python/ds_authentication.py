@@ -223,6 +223,12 @@ def get_auth_status(redirecting=False):
     # If OAuth environment variables are set, and auth is not set, then initiate auth by using them
     env_oauth_client_id = os.environ.get('DS_OAUTH_CLIENT_ID')
     env_oauth_secret = os.environ.get('DS_OAUTH_SECRET')
+    # Check for default values from Heroku config panel
+    if env_oauth_client_id == "***":
+        env_oauth_client_id = None
+    if env_oauth_secret == "***":
+        env_oauth_secret = None
+        
     if not ('auth' in session) and env_oauth_client_id and env_oauth_secret:
         auth = {}
         auth["type"] = "oauth_code" 
