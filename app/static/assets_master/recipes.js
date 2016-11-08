@@ -29,8 +29,8 @@
         if ($(".framework-home-page").length == 0) {
             return;
         }
-        set_redirect_urls();
-        home_auth_start();
+        var redirect_url = set_redirect_urls();
+        home_auth_start(redirect_url);
         $("#options").show().click(function(){webhook_status(true)}); // Only show options on home page nav
     }
 
@@ -40,9 +40,10 @@
             url = location.protocol + '//' + location.host + location.pathname + redirect_uri;
 
         $("#code_redirect_uri").val(url);
+        return url;
     }
 
-	function home_auth_start(){
+	function home_auth_start(redirect_url){
 		// Queries the server to determine authentication status
 		// If authenticated, set status
 		// Else set status and enable user to submit authentication information
@@ -52,26 +53,26 @@
             busy = "#busy",
             recipe_index = "#recipe-index",
             unauthenticate = "#unauthenticate";
-        $.ajax({url: auth_status_url + "?" + Date.now()})
+        $.ajax({url: auth_status_url + "?redirect_url=" + encodeURIComponent(redirect_url) + "&" + Date.now()})
 			.done(function(data, textStatus, jqXHR) {
                 if (data.oauth_redirect) {
                     window.location = data.oauth_redirect; // Re-authenticate
-                }
-                $(target).html(data.description);
-                auth_status_display(data);
-				if (data.authenticated) {
-                    $(unauthenticate).show();
-                    webhook_status();
                 } else {
-                    $(auth_params).show()
+                    $(busy).hide();
+                    $(target).html(data.description);
+                    auth_status_display(data);
+    				if (data.authenticated) {
+                        $(unauthenticate).show();
+                        webhook_status();
+                    } else {
+                        $(auth_params).show()
+                    }
                 }
 			})
 			.fail(function(jqXHR, textStatus, errorThrown) {
 			    $(target).html("<h3>Problem</h3><p>" + textStatus + "</p>");
-			})
-            .always(function(){
                 $(busy).hide();
-            })
+			})
 	}
 	
 	function auth_status_display(data){

@@ -3,4 +3,15 @@
   "description": "www.docusign.com/dev-center/recipes",
   "keywords": ["python"],
   "addons": []
+  "env": {
+      "DS_OAUTH_CLIENT_ID": {
+        "description": "Optional: your OAuth client_id (Integration Key)."
+      },
+      "DS_OAUTH_SECRET": {
+        "description": "Optional: your OAuth secret."
+      },
+      "SET_REDIRECT":{
+          "description": "You must add an OAuth redirect uri of <server>/auth_redirect"
+      }
+      
 }
