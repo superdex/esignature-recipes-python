@@ -223,11 +223,6 @@ def get_auth_status(redirecting=False):
     # If OAuth environment variables are set, and auth is not set, then initiate auth by using them
     env_oauth_client_id = os.environ.get('DS_OAUTH_CLIENT_ID')
     env_oauth_secret = os.environ.get('DS_OAUTH_SECRET')
-    # Check for default values from Heroku config panel
-    if env_oauth_client_id == "***":
-        env_oauth_client_id = None
-    if env_oauth_secret == "***":
-        env_oauth_secret = None
         
     if not ('auth' in session) and env_oauth_client_id and env_oauth_secret:
         auth = {}
@@ -348,8 +343,8 @@ def set_auth_oauth_code(req):
     """
 
     # Normally, the client_id (Integration_key), secret_key, and redirect_uri values are constants for the app.
-    client_id = req["code_client_id"]
-    secret_key = req["code_secret_key"]
+    client_id = req["code_client_id"] or os.environ.get('DS_OAUTH_CLIENT_ID')
+    secret_key = req["code_secret_key"] or os.environ.get('DS_OAUTH_SECRET')
     redirect_uri = req["code_redirect_uri"]
 
     if not client_id:
