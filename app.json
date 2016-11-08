@@ -16,5 +16,5 @@
           "description": "You must add an OAuth redirect uri of <server>/auth_redirect",
           "value": "***"
       }
-      
+  }    
 }
