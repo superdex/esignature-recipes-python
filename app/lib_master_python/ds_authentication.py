@@ -1,5 +1,9 @@
 # Python Authentication for DocuSign Recipes
 
+# OAuth settings can be stored as environment variables:
+#  DS_OAUTH_CLIENT_ID  # same as 'Integration ID'
+#  DS_OAUTH_SECRET
+
 # Set encoding to utf8. See http:#stackoverflow.com/a/21190382/64904 
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
@@ -216,6 +220,19 @@ def get_auth_status(redirecting=False):
     translator = {"oauth_code": "OAuth Authorization Code Grant",
                   "ds_legacy": "DocuSign Legacy Authentication"}
 
+    # If OAuth environment variables are set, and auth is not set, then initiate auth by using them
+    env_oauth_client_id = os.environ.get('DS_OAUTH_CLIENT_ID')
+    env_oauth_secret = os.environ.get('DS_OAUTH_SECRET')
+    if not ('auth' in session) and env_oauth_client_id and env_oauth_secret:
+        auth = {}
+        auth["type"] = "oauth_code" 
+        auth["client_id"] = env_oauth_client_id
+        auth["secret_key"] = env_oauth_secret
+        auth['authenticated'] = False
+        redirect_url = request.args.get('redirect_url')
+        auth["redirect_uri"] = redirect_url
+        session['auth'] = auth
+    
     if 'auth' in session:
         auth = session['auth']
     else:
