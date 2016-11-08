@@ -9,5 +9,9 @@
       },
       "DS_OAUTH_SECRET": {
         "description": "Optional: your OAuth secret."
+      },
+      "SET_REDIRECT":{
+          "description": "You must add an OAuth redirect uri of <server>/auth_redirect"
       }
+      
 }

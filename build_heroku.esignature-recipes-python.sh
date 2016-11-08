@@ -149,36 +149,6 @@ git commit -m "First commit"
 echo "heroku create"
 heroku create  --buildpack heroku/python
 
-# Set the environment variables for DS_USER_EMAIL, DS_USER_PW, 
-# and DS_INTEGRATION_ID
-#
-# If the file ~/.docusign_credentials exists, then source it
-# Otherwise, gather the data and offer to store it
-DS_CREDENTIAL_FILE=~/.docusign_credentials
-
-echo "Setting credentials"
-if [ -e "$DS_CREDENTIAL_FILE" ]; then
-	source "$DS_CREDENTIAL_FILE" >/dev/null
-else
-	printf "Please enter your DocuSign account email: "
-	read DS_USER_EMAIL
-	printf "Please enter your DocuSign account password: (the password is not shown) "
-	read -s DS_USER_PW 
-	printf "\nPlease enter your DocuSign account integration ID: "
-	read DS_INTEGRATION_ID
-	printf "Should I store your credentials in $DS_CREDENTIAL_FILE ? Enter yes if so: "
-	read STORE
-
-	heroku config:set DS_USER_EMAIL=${DS_USER_EMAIL} \
-		DS_USER_PW=${DS_USER_PW} \
-		DS_INTEGRATION_ID=${DS_INTEGRATION_ID} >/dev/null
-	
-	if [ "$STORE" == "yes" ]; then
-		touch "$DS_CREDENTIAL_FILE"
-		printf "heroku config:set DS_USER_EMAIL=%s DS_USER_PW=%s DS_INTEGRATION_ID=%s \n" $DS_USER_EMAIL $DS_USER_PW $DS_INTEGRATION_ID > "$DS_CREDENTIAL_FILE"
-	fi
-fi
-
 heroku config:set DEBUG=True
 
 echo "git push heroku master"
