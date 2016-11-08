@@ -2,7 +2,7 @@
   "name": "DocuSign Python Recipes",
   "description": "www.docusign.com/dev-center/recipes",
   "keywords": ["python"],
-  "addons": []
+  "addons": [],
   "env": {
       "DS_OAUTH_CLIENT_ID": {
         "description": "Optional: your OAuth client_id (Integration Key).",
