@@ -26,9 +26,7 @@ oauth_userInfo = oauth_authentication_server + "oauth/userinfo"
 oauth_base_url_fragment = "/restapi/v2/" # Used to create base_url from base_uri
 ca_bundle = "app/static/assets_master/ca-bundle.crt"
 oauth_scope = "signature"
-
 oauth_opportunistic_re_auth = 60 * 30 # refesh OAuth it expires in less than 30 minutes
-oauth_force_token_refresh = False # Should we force token refresh?
 
 # When an access token has expired, you'll get the error response:
 # "errorCode": "AUTHORIZATION_INVALID_TOKEN"
@@ -89,7 +87,12 @@ def reauthenticate_check(r, redirect):
             session["oauth_force_re_auth"] = False # reset
             
     if oauth_force_re_auth:
-        ds_recipe_lib.log("reauthenticate_check: forcing re-authentication...")
+        ds_recipe_lib.log("Forcing re-authentication. Trying refresh...")
+        refresh_didnt_work = token_refresh(auth)
+        if refresh_didnt_work:
+            ds_recipe_lib.log("Forcing re-authentication. Token refresh failed. Full re-auth...")
+        else:    
+            return
     
     if oauth_force_re_auth or ('err_code' in r and r['err_code'] == "PLEASE_REAUTHENTICATE"):
         session["auth_redirect"] = redirect
@@ -133,8 +136,7 @@ def get_auth():
         auth["err_code"] = "PLEASE_AUTHENTICATE"
         return auth
     
-    if auth["type"] == "oauth_code" and (((auth["expires"] - int(time.time())) < oauth_opportunistic_re_auth) 
-        or oauth_force_token_refresh):
+    if auth["type"] == "oauth_code" and ((auth["expires"] - int(time.time())) < oauth_opportunistic_re_auth):
         re_authenticate = token_refresh(auth)
         if re_authenticate:
             if auth["client_id"] and auth["secret_key"]:
