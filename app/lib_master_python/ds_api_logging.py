@@ -103,7 +103,7 @@ def logging_updateSettings():
                         str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
 
     data = r.json()
-    if data["apiRequestLogRemainingEntries"] < 0:
+    if int(data["apiRequestLogRemainingEntries"]) < 0:
         data["apiRequestLogRemainingEntries"] = 0 # Sometimes the platform returns negative numbers!
     return {"err": False, "max_entries": data["apiRequestLogMaxEntries"],
             "remaining_entries": data["apiRequestLogRemainingEntries"],
