@@ -54,7 +54,7 @@ def auth_redirect():
 @app.route('/oauth_force_reauthenticate', methods=['GET'])
 def oauth_force_reauthenticate():
     session["oauth_force_re_auth"] = True
-    flash("OAuth will be forced to re-authenticate")
+    flash("OAuth will be forced to re-authenticate with your next request to DocuSign")
     return redirect(ds_recipe_lib.get_base_url(1))
 
 ################################################################################
