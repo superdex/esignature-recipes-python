@@ -254,8 +254,9 @@ def status_item(filepath, filename, files_dir_url):
     # (We want the first child). So we get the children this way:
     #
     # Set defaults for fields that may not be present
-    sender_email = envelope_delivered_timestamp = envelope_created_timestamp = envelope_signed_timestamp =  None
-    envelope_completed_timestamp = None
+    time_generated = subject = sender_user_name = sender_email = envelope_sent_timestamp = envelope_created_timestamp = None
+    envelope_delivered_timestamp = envelope_signed_timestamp = envelope_completed_timestamp = None
+
     # Now fill in the values that we can find:
     for child in xml.EnvelopeStatus:
         if child.name == "Status": envelope_status = child.string
