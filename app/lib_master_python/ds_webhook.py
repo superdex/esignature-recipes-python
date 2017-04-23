@@ -150,7 +150,6 @@ def get_eventNotification_object():
         "includeCertificateOfCompletion": "true",
         "envelopeEvents": [ # for this recipe, we're requesting notifications
             # for all envelope and recipient events
-            {"envelopeEventStatusCode": "draft"},
             {"envelopeEventStatusCode": "sent"},
             {"envelopeEventStatusCode": "delivered"},
             {"envelopeEventStatusCode": "completed"},
@@ -162,7 +161,9 @@ def get_eventNotification_object():
             {"recipientEventStatusCode": "Completed"},
             {"recipientEventStatusCode": "Declined"},
             {"recipientEventStatusCode": "AuthenticationFailed"},
-            {"recipientEventStatusCode": "AutoResponded"}]
+            {"recipientEventStatusCode": "AutoResponded"},
+            {"recipientEventStatusCode": "FinishLater"}
+        ]
         }
     return event_notification
 
