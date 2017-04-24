@@ -4,7 +4,7 @@ Repo: esignature-recipes-python
 
 This is a **beta** release. Comments are welcomed.
 
-This repo contains a Python Flask application that demonstrates several of the 
+This repo contains a Python Flask application that demonstrates several of the
 DocuSign Signature REST API recipes:
 
 * Embedded signing. See app/py_001_embedded_signing
@@ -26,6 +26,15 @@ Use the deploy button to immediately try this app on Heroku. You can use Herokuâ
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
+### Integration Key and Secret
+**Do not use** the DS_OAUTH_CLIENT_ID or DS_OAUTH_SECRET config variables.
+
+Instead, enter your Integration Key (Client ID) and Secret after you have started the software on Heroku.
+
+Details: the config variables should only be used if the new server's name is already known and has been
+registered as a redirect URI with the DocuSign authentication service.
+
+### Build delays
 Note: during the Heroku *build* process, the setup.py step for **lxml** takes several minutes since it includes a compilation.
 
 ## Run the app locally
