@@ -5,7 +5,7 @@
 	// Private global variabls for the functions
 	var toc_items = [], // array of the notification items that are being displayed
 		ace_editors = {request: false, response: false},
-        ace_cdn = "https://cdn.jsdelivr.net/ace/1.2.6/noconflict/"
+        ace_cdn = "https://cdn.jsdelivr.net/ace/1.2.6/noconflict/",
         omit_base64_text = "[Base64 data omitted]",
         omit_image_text  = "[Image data omitted]",
         item_intro_template,
