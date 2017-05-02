@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <link rel="icon" href="https://www.docusign.com/sites/all/themes/custom/docusign/favicons/favicon.ico">    
+    <link rel="icon" href="https://www.docusign.com/sites/all/themes/custom/docusign/favicons/favicon.ico">
     {% if title %}
     <title>{{ title }}</title>
     {% else %}
@@ -62,7 +62,7 @@
 <script src="{{ url_for('static', filename='assets_master/handlebars.min.js') }}"></script>
 
 <!-- NOTE: If you update the Ace version or location, also update the "ace_cdn" variable in recipes.js!!! -->
-<script src="https://cdn.jsdelivr.net/g/ace@1.2.6(noconflict/ace.js+noconflict/mode-hjson.js+noconflict/mode-liquid.js+noconflict/mode-xml.js+noconflict/theme-chrome.js)"></script>
+<script src="https://cdn.jsdelivr.net/g/ace@1.2.6(noconflict/ace.js+noconflict/mode-json.js+noconflict/mode-liquid.js+noconflict/mode-xml.js+noconflict/theme-chrome.js)"></script>
 
 <!-- JS for the recipes -->
 <script>window.recipe_framework_base = "{{base_url}}";</script>
@@ -72,7 +72,3 @@
 {% block footer_content %}{% endblock %}
 </body>
 </html>
-
-
-
-
