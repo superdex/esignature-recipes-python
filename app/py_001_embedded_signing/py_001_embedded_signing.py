@@ -1,6 +1,6 @@
 # DocuSign API Embedded Signing Recipe 001 (PYTHON)
 
-# Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
+# Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
 import requests, os, base64, time, urllib
@@ -23,6 +23,8 @@ ds_signer1_name_orig = "***"
 ds_signer1_clientUserId = 1001 # UNIQUELY identifies the signer within your embedded system
 ds_cc1_email_orig = "***"
 ds_cc1_name_orig = "***"
+ds_cc2_email_orig = "***"
+ds_cc2_name_orig = "***"
 embedded_signing_key = "embedded_signing_key" # Used to store/retrieve the embedded signing details
 return_uri = "/py_001_embedded_signing/return_url" # where DocuSign should redirect to after the person has finished signing
 trace_value = "py_001_embedded_signing" # Used for tracing API calls
@@ -44,6 +46,8 @@ def send():
     ds_signer1_name = ds_recipe_lib.get_signer_name(ds_signer1_name_orig)
     ds_cc1_email = ds_recipe_lib.get_signer_email(ds_cc1_email_orig)
     ds_cc1_name = ds_recipe_lib.get_signer_name(ds_cc1_name_orig)
+    ds_cc2_email = ds_recipe_lib.get_signer_email(ds_cc2_email_orig)
+    ds_cc2_name = ds_recipe_lib.get_signer_name(ds_cc2_name_orig)
 
     # STEP 1 - Fetch Authentication information from session
     auth = ds_authentication.get_auth()
@@ -62,12 +66,12 @@ def send():
     # The documents array can include multiple documents, of differing types.
     # All documents are converted to pdf prior to signing.
     # The fileExtension field defaults to "pdf".
-    documents = [{"documentId": "1", 
+    documents = [{"documentId": "1",
             "name": doc_document_name,
             "fileExtension": os.path.splitext(doc_document_path)[1][1:],
             "documentBase64": base64.b64encode(file_contents)}
         ]
-    
+
     # The signing fields
     #
     # Invisible (white) Anchor field names for the NDA.pdf document:
@@ -94,14 +98,22 @@ def send():
         "recipientId": "1",
         "tabLabel": "Full Name",
         "name": "Full Name"}],
-    "textTabs": [{                 
+    "textTabs": [{
         "anchorString": "signer1company", # Anchored for doc 1
         "anchorYOffset": "-8",
         "fontSize": "Size12",
         "recipientId": "1",
         "tabLabel": "Company",
         "name": "Company",
-        "required": "true"}],
+        "required": "false"}],
+    "signerAttachmentTabs": [{
+        "anchorString": "signer1company", # Anchored for doc 1
+        "anchorYOffset": "110",
+        "fontSize": "Size12",
+        "recipientId": "1",
+        "tabLabel": "Optional attachment",
+        "name": "NDA_attachment",
+        "optional": "true"}],
     "dateSignedTabs": [{
         "anchorString": "signer1date", # Anchored for doc 1
         "anchorYOffset": "-6",
@@ -110,22 +122,26 @@ def send():
         "name": "Date Signed",
         "tabLabel": "date_signed"}]
     }
-    
+
     signers = [{"email": ds_signer1_email,
                 "name": ds_signer1_name,
                 "clientUserId": ds_signer1_clientUserId, # this signer is an embedded signer
                 "recipientId": "1",
                 "routingOrder": "1",
                 "tabs": fields}]
-    
+
     ccs = [{"email": ds_cc1_email,
-                "name": ds_cc1_name,
-                "recipientId": "2",
-                "routingOrder": "2"}]
-    
+            "name": ds_cc1_name,
+            "recipientId": "2",
+            "routingOrder": "2"},
+           {"email": ds_cc2_email,
+            "name": ds_cc2_name,
+            "recipientId": "3",
+            "routingOrder": "3"}]
+
     data = {
         "emailSubject": subject,
-        "documents": documents, 
+        "documents": documents,
         "recipients": {"signers": signers, "carbonCopies": ccs},
         "status": "sent"
     }
@@ -143,9 +159,9 @@ def send():
         r = requests.post(url, headers=ds_headers, json=data)
     except requests.exceptions.RequestException as e:
         return {'err': "Error calling Envelopes:create: " + str(e)}
-        
+
     status = r.status_code
-    if (status != 201): 
+    if (status != 201):
         return ({'err': "Error calling DocuSign Envelopes:create<br/>Status is: " +
             str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
 
@@ -166,7 +182,7 @@ def send():
     html =  ("<h2>Envelope created, ready to be signed!</h2>" +
             "<p>Envelope ID: " + envelope_id + "</p>" +
             "<p>Signer: " + ds_signer1_name + "</p>" +
-            "<p>CC: " + ds_cc1_name + "</p>")
+            "<p>CC: " + ds_cc1_name + ", " + ds_cc2_name + "</p>")
     if webhook_instructions:
         html += (
             "<h2>Next steps:</h2>" +
@@ -364,7 +380,7 @@ def get_status(envelope_id):
     auth = ds_authentication.get_auth()
     if auth["err"]:
         return {"err": auth["err"], "err_code": auth["err_code"]}
-    
+
     # append "/envelopes/{envelopeId}" to the baseUrl and use in the request
     url = auth["base_url"] + '/envelopes/{}'.format(envelope_id) + "?cache_buster={}".format(time.time())
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
@@ -422,19 +438,3 @@ def get_doc():
 
 
 # FIN
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
