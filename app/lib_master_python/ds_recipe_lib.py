@@ -1,6 +1,6 @@
 # Python Utilities for DocuSign Recipes
 
-# Set encoding to utf8. See http:#stackoverflow.com/a/21190382/64904 
+# Set encoding to utf8. See http:#stackoverflow.com/a/21190382/64904
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
 import os, base64, string, urllib, random, re, json
@@ -40,7 +40,7 @@ def get_signer_email(email):
 
 def make_temp_email():
     # just create something unique to use with maildrop.cc
-    # Read the email at http:#maildrop.cc/inbox/<mailbox_name>  
+    # Read the email at http:#maildrop.cc/inbox/<mailbox_name>
     ip = "100"
     email = base64.b64encode (os.urandom(15))
     email = "a" + re.sub(r'[^A-Za-z0-9]', '', email) # strip non-alphanumeric characters
@@ -54,6 +54,10 @@ def get_temp_email_access(email):
     if (parts[1] != temp_email_server):
         return False
     return url + parts[0]
+
+def get_temp_email_access_id(email):
+    parts = string.split(email, "@")
+    return parts[0]
 
 def get_temp_email_access_qrcode(address):
     # url = "http://open.visualead.com/?size=130&type=png&data="
@@ -92,11 +96,11 @@ def full_url(s):
 
 # See http://stackoverflow.com/a/8891890/64904
 def url_origin(s, use_forwarded_host = False):
-    
-    # testing if Heroku includes forwarding host 
+
+    # testing if Heroku includes forwarding host
     use_forwarded_host = True
     include_protocol = True
-    
+
     ssl      = (('HTTPS' in s) and s['HTTPS'] == 'on')
     sp       = s['SERVER_PROTOCOL'].lower()
     protocol = sp[:sp.find('/')] + ('s' if ssl else '' )
@@ -105,7 +109,7 @@ def url_origin(s, use_forwarded_host = False):
     host     = s['HTTP_X_FORWARDED_HOST'] if (use_forwarded_host and ('HTTP_X_FORWARDED_HOST' in s)) \
                  else (s['HTTP_HOST'] if ('HTTP_HOST' in s) else None)
     host     = host if (host != None) else (s['SERVER_NAME'] + port)
-    
+
     # The protocol can easily be wrong if we're frontended by a HTTPS proxy
     # (Like the standard Heroku setup!)
     on_heroku = heroku_env in os.environ
@@ -117,15 +121,15 @@ def url_origin(s, use_forwarded_host = False):
     if use_https: # Special handling
         protocol = "https"
     return protocol + '://' + host
-        
+
 def rm_queryparameters (input):
     parts = string.split(input, "?")
     return parts[0]
 
 ########################################################################
 ########################################################################
-########################################################################    
-    
+########################################################################
+
 def get_fake_name():
     first_names = ["Verna", "Walter", "Blanche", "Gilbert", "Cody", "Kathy",
     "Judith", "Victoria", "Jason", "Meghan", "Flora", "Joseph", "Rafael",
@@ -135,13 +139,13 @@ def get_fake_name():
     "Myrtis", "Amanda", "Gregory", "Ariana", "Lucinda", "Stella", "James",
     "Nathaniel", "Maria", "Cynthia", "Amy", "Sylvia", "Dorothy", "Kenneth",
     "Jackie"]
-    last_names = ["Francisco", "Deal", "Hyde", "Benson", "Williamson", 
-    "Bingham", "Alderman", "Wyman", "McElroy", "Vanmeter", "Wright", "Whitaker", 
-    "Kerr", "Shaver", "Carmona", "Gremillion", "O'Neill", "Markert", "Bell", 
-    "King", "Cooper", "Allard", "Vigil", "Thomas", "Luna", "Williams", 
-    "Fleming", "Byrd", "Chaisson", "McLeod", "Singleton", "Alexander", 
-    "Harrington", "McClain", "Keels", "Jackson", "Milne", "Diaz", "Mayfield", 
-    "Burnham", "Gardner", "Crawford", "Delgado", "Pape", "Bunyard", "Swain", 
+    last_names = ["Francisco", "Deal", "Hyde", "Benson", "Williamson",
+    "Bingham", "Alderman", "Wyman", "McElroy", "Vanmeter", "Wright", "Whitaker",
+    "Kerr", "Shaver", "Carmona", "Gremillion", "O'Neill", "Markert", "Bell",
+    "King", "Cooper", "Allard", "Vigil", "Thomas", "Luna", "Williams",
+    "Fleming", "Byrd", "Chaisson", "McLeod", "Singleton", "Alexander",
+    "Harrington", "McClain", "Keels", "Jackson", "Milne", "Diaz", "Mayfield",
+    "Burnham", "Gardner", "Crawford", "Delgado", "Pape", "Bunyard", "Swain",
     "Conaway", "Hetrick", "Lynn", "Petersen"]
 
     random.seed()
@@ -150,4 +154,3 @@ def get_fake_name():
     return first + " " + last
 
 ## FIN ##
-

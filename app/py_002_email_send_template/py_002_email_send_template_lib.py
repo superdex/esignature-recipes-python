@@ -1,6 +1,6 @@
 # DocuSign API Send Signing Request from Template via Email Recipe 002 (PYTHON)
 
-# Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904 
+# Set encoding to utf8. See http://stackoverflow.com/a/21190382/64904
 import sys; reload(sys); sys.setdefaultencoding('utf8')
 
 import json, socket, certifi, requests, os, base64, re, urllib, shutil
@@ -135,7 +135,7 @@ def send():
     eventNotification = ds_webhook.get_eventNotification_object()
     if eventNotification:
         data["eventNotification"] = eventNotification
-        
+
     # append "/envelopes" to the baseUrl and use in the request
     url = auth["base_url"] + "/envelopes"
     ds_headers = {'Accept': 'application/json', auth["auth_header_key"]: auth["auth_header_value"],
@@ -144,16 +144,16 @@ def send():
         r = requests.post(url, headers=ds_headers, json=data)
     except requests.exceptions.RequestException as e:
         return {'err': "Error calling Envelopes:create: " + str(e)}
-        
+
     status = r.status_code
-    if (status != 201): 
+    if (status != 201):
         return ({'err': "Error calling DocuSign Envelopes:create<br/>Status is: " +
             str(status) + ". Response: <pre><code>" + r.text + "</code></pre>"})
 
     data = r.json()
     envelope_id = data['envelopeId']
     session['latest_envelope_id'] = envelope_id # Save for other recipe's use
-    
+
     # Instructions for reading the email
     webhook_instructions = ds_webhook.webhook_instructions(envelope_id)
     html =  ("<h2>Envelope created, Signature request sent!</h2>" +
@@ -171,9 +171,12 @@ def send():
     ds_signer1_email_access = ds_recipe_lib.get_temp_email_access(ds_signer1_email)
     if (ds_signer1_email_access):
         # A temp account was used for the email
-        html += "<p>Respond to the request via your mobile phone by using the QR code: </p>" + \
-                "<p>" + ds_recipe_lib.get_temp_email_access_qrcode(ds_signer1_email_access) + "</p>" + \
-                "<p> or via <a target='_blank' href='" + ds_signer1_email_access + "'>your web browser.</a></p>"
+        #html += "<p>Respond to the request via your mobile phone by using the QR code: </p>" + \
+        #        "<p>" + ds_recipe_lib.get_temp_email_access_qrcode(ds_signer1_email_access) + "</p>" + \
+        #        "<p> or via <a target='_blank' href='" + ds_signer1_email_access + "'>your web browser.</a></p>"
+        html += ("<p>View and respond to the request by opening " +
+                "<a target='_blank' href='http://mailinator.com'>mailinator.com</a></p>" +
+                "<p>Then enter mailbox id " + get_temp_email_access_id(ds_signer1_email_access) + "</p>")
     else:
         # A regular email account was used
         html += "<p>Respond to the request via your mobile phone or other mail tool.</p>" + \
@@ -195,19 +198,3 @@ def send():
 ########################################################################
 
 # FIN
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
