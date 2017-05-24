@@ -170,7 +170,7 @@ def send():
         #        "<p> or via <a target='_blank' href='" + ds_signer1_email_access + "'>your web browser.</a></p>"
         html += ("<p>View and respond to the request by opening " +
                 "<a target='_blank' href='http://mailinator.com'>mailinator.com</a></p>" +
-                "<p>Then enter mailbox id " + get_temp_email_access_id(ds_signer1_email_access) + "</p>")
+                "<p>Then enter mailbox id " + ds_recipe_lib.get_temp_email_access_id(ds_signer1_email_access) + "</p>")
     else:
         # A regular email account was used
         html += "<p>Respond to the request via your mobile phone or other mail tool.</p>" + \
