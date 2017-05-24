@@ -165,12 +165,12 @@ def send():
     ds_signer1_email_access = ds_recipe_lib.get_temp_email_access(ds_signer1_email)
     if (ds_signer1_email_access):
         # A temp account was used for the email
-        #html += "<p>Respond to the request via your mobile phone by using the QR code: </p>" + \
-        #        "<p>" + ds_recipe_lib.get_temp_email_access_qrcode(ds_signer1_email_access) + "</p>" + \
-        #        "<p> or via <a target='_blank' href='" + ds_signer1_email_access + "'>your web browser.</a></p>"
-        html += ("<p>View and respond to the request by opening " +
-                "<a target='_blank' href='http://mailinator.com'>mailinator.com</a></p>" +
-                "<p>Then enter mailbox id " + ds_recipe_lib.get_temp_email_access_id(ds_signer1_email) + "</p>")
+        html += "<p>Respond to the request via your mobile phone by using the QR code: </p>" + \
+                "<p>" + ds_recipe_lib.get_temp_email_access_qrcode(ds_signer1_email_access) + "</p>" + \
+                "<p> or via <a target='_blank' href='" + ds_signer1_email_access + "'>your web browser.</a></p>"
+        #html += ("<p>View and respond to the request by opening " +
+        #        "<a target='_blank' href='http://mailinator.com'>mailinator.com</a></p>" +
+        #        "<p>Then enter mailbox id " + ds_recipe_lib.get_temp_email_access_id(ds_signer1_email) + "</p>")
     else:
         # A regular email account was used
         html += "<p>Respond to the request via your mobile phone or other mail tool.</p>" + \
