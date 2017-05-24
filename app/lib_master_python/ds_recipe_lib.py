@@ -48,8 +48,8 @@ def make_temp_email():
 
 def get_temp_email_access(email):
     # just create something unique to use with maildrop.cc
-    # Read the email at https://mailinator.com/inbox2.jsp?public_to=<mailbox_name>
-    url = "https://mailinator.com/inbox2.jsp?public_to="
+    # Read the email at https://mailinator.com/inbox2.jsp?to=<mailbox_name>
+    url = "https://mailinator.com/inbox2.jsp?to="
     parts = string.split(email, "@")
     if (parts[1] != temp_email_server):
         return False
