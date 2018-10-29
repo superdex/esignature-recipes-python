@@ -19,7 +19,7 @@ itsdangerous==0.24
 Jinja2==2.8               # via flask
 lxml==3.6.4
 MarkupSafe==0.23          # via jinja2
-requests==2.11.1
+requests==2.20.0
 Werkzeug==0.11.11         # via flask, flask-wtf
 wheel==0.29.0
 WTForms==2.1              # via flask-wtf
