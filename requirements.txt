@@ -11,7 +11,7 @@ Flask-AutoIndex==0.6
 flask-heroku==0.1.9
 Flask-Silk==0.2           # via flask-autoindex
 Flask-WTF==0.13.1
-Flask=1.0.0             # via flask-autoindex, flask-heroku, flask-silk, flask-wtf
+Flask==1.0.0             # via flask-autoindex, flask-heroku, flask-silk, flask-wtf
 future==0.16.0
 gunicorn==19.6.0
 iso8601==0.1.11
